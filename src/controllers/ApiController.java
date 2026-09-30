@@ -48,6 +48,8 @@ public class ApiController implements HttpHandler {
                 handleIssue(exchange);
             } else if (path.equals("/api/return") && "POST".equalsIgnoreCase(method)) {
                 handleReturn(exchange);
+            } else if (path.equals("/api/members") && "GET".equalsIgnoreCase(method)) {
+                handleGetMembers(exchange);
             } else {
                 sendJsonResponse(exchange, 404, "{\"error\": \"Endpoint not found\"}");
             }
@@ -145,6 +147,20 @@ public class ApiController implements HttpHandler {
         } else {
             sendJsonResponse(exchange, 400, "{\"success\": false, \"error\": \"" + escape(result) + "\"}");
         }
+    }
+
+    private void handleGetMembers(HttpExchange exchange) throws IOException {
+        List<User> users = userDAO.findAll();
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < users.size(); i++) {
+            User u = users.get(i);
+            String role = u.getRoleId() == 1 ? "Admin" : (u.getRoleId() == 2 ? "Librarian" : "Student");
+            sb.append(String.format("{\"id\":\"%s\",\"name\":\"%s\",\"email\":\"%s\",\"role\":\"%s\"}",
+                u.getId(), escape(u.getName()), escape(u.getEmail()), role));
+            if (i < users.size() - 1) sb.append(",");
+        }
+        sb.append("]");
+        sendJsonResponse(exchange, 200, sb.toString());
     }
 
     // Utilities

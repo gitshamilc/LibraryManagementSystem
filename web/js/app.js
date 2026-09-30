@@ -168,6 +168,7 @@ navItems.forEach(item => {
         // Load data based on view
         if (targetView === 'dashboard') { loadDashboardStats(); initChart(); }
         if (targetView === 'catalog') loadCatalog();
+        if (targetView === 'members') loadMembers();
     });
 });
 
@@ -251,7 +252,38 @@ function renderBooks(books) {
     });
 }
 
-// Global Search Logic
+async function loadMembers() {
+    const tbody = document.getElementById('member-table-body');
+    tbody.innerHTML = '<tr><td colspan="6"><div class="loader">Loading members...</div></td></tr>';
+    
+    try {
+        const res = await fetch(`${API_BASE}/members`);
+        const members = await res.json();
+        renderMembers(members);
+    } catch (err) {
+        tbody.innerHTML = '<tr><td colspan="6">Failed to load members.</td></tr>';
+        console.error('Error loading members:', err);
+    }
+}
+
+function renderMembers(members) {
+    const tbody = document.getElementById('member-table-body');
+    tbody.innerHTML = '';
+    
+    members.forEach(m => {
+        let roleBadge = m.role === 'Admin' ? 'purple' : (m.role === 'Librarian' ? 'blue' : 'gray');
+        tbody.innerHTML += `
+            <tr>
+                <td>${m.id}</td>
+                <td><strong>${m.name}</strong></td>
+                <td>${m.email}</td>
+                <td><span class="badge ${roleBadge}">${m.role}</span></td>
+                <td><span class="badge green">Active</span></td>
+                <td><button class="btn-text" onclick="document.getElementById('issue-member-id').value='${m.id}'; document.querySelector('[data-target=issue]').click()">Issue Book</button></td>
+            </tr>
+        `;
+    });
+}
 document.getElementById('global-search').addEventListener('input', (e) => {
     const term = e.target.value.toLowerCase();
     
@@ -342,10 +374,10 @@ function initChart() {
             datasets: [{
                 label: 'Books Borrowed',
                 data: [12, 19, 15, 25, 22, 30],
-                borderColor: '#d97706',
+                borderColor: '#c29352',
                 tension: 0.4,
                 fill: true,
-                backgroundColor: 'rgba(217, 119, 6, 0.1)'
+                backgroundColor: 'rgba(194, 147, 82, 0.1)'
             }]
         },
         options: {

@@ -178,16 +178,6 @@
                 <a href="#" class="nav-item" data-target="catalog"><span>📖</span> Book Catalog</a>
                 <a href="#" class="nav-item" data-target="issue"><span>🔄</span> Issue & Return</a>
                 <a href="#" class="nav-item" data-target="members"><span>👥</span> Member Directory</a>
-                
-                <div class="nav-section">LIBRARY</div>
-                <a href="#" class="nav-item" data-target="inventory"><span>📦</span> Inventory</a>
-                <a href="#" class="nav-item" onclick="document.querySelector('[data-target=dashboard]').click(); setTimeout(()=>document.getElementById('view-overdue').scrollIntoView({behavior:'smooth'}), 100);"><span>⚠️</span> Overdue Books</a>
-
-                <div class="nav-section">REPORTS</div>
-                <a href="#" class="nav-item" data-target="reports"><span>📈</span> Analytics & Reports</a>
-                
-                <div class="nav-section">SYSTEM</div>
-                <a href="#" class="nav-item" data-target="settings"><span>⚙️</span> System Settings</a>
             </nav>
             <div class="user-profile">
                 <div class="avatar" id="nav-avatar">A</div>
@@ -408,53 +398,6 @@
                                 <!-- Populated dynamically -->
                             </tbody>
                         </table>
-                    </div>
-                </div>
-
-                <!-- 5. INVENTORY & REPORTS (Mocks for completeness) -->
-                <div id="view-inventory" class="view">
-                    <h2>Physical Inventory Tracking</h2>
-                    <div class="panel">
-                        <p>Track all 150+ physical copies, barcodes, shelf locations, and book condition (Lost/Damaged).</p>
-                        <table class="data-table">
-                            <thead><tr><th>Copy ID</th><th>Book Title</th><th>Barcode</th><th>Location</th><th>Condition</th><th>Status</th></tr></thead>
-                            <tbody>
-                                <tr><td>C0001</td><td>Clean Code</td><td>BC93841</td><td>Shelf-A-2</td><td>Good</td><td><span class="badge green">Available</span></td></tr>
-                                <tr><td>C0002</td><td>Clean Code</td><td>BC19234</td><td>Shelf-A-2</td><td>Worn</td><td><span class="badge blue">Issued</span></td></tr>
-                                <tr><td>C0003</td><td>Dune</td><td>BC88412</td><td>Shelf-D-4</td><td>Damaged</td><td><span class="badge red">Repair</span></td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div id="view-reports" class="view">
-                    <h2>Analytics & Financial Reports</h2>
-                    <div class="dashboard-split">
-                        <div class="panel">
-                            <h3>Generate Report</h3>
-                            <select class="large-input"><option>Fines Collected (This Month)</option><option>Overdue Books List</option><option>Inventory Audit</option></select>
-                            <button class="btn-secondary" style="margin-top:10px; width:100%">Download PDF</button>
-                            <button class="btn-secondary" style="margin-top:10px; width:100%">Export CSV</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="view-settings" class="view">
-                    <h2>System Configuration</h2>
-                    <div class="panel" style="max-width: 600px;">
-                        <div class="input-group">
-                            <label>Library Name</label>
-                            <input type="text" value="GP6 Library System">
-                        </div>
-                        <div class="input-group">
-                            <label>Default Loan Period (Days)</label>
-                            <input type="number" value="14">
-                        </div>
-                        <div class="input-group">
-                            <label>Overdue Fine per Day (₹)</label>
-                            <input type="number" value="5">
-                        </div>
-                        <button class="btn-primary">Save Configuration</button>
                     </div>
                 </div>
 

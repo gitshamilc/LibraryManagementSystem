@@ -53,6 +53,7 @@ public class Main {
         server.createContext("/api/books", apiController);
         server.createContext("/api/issue", apiController);
         server.createContext("/api/return", apiController);
+        server.createContext("/api/members", apiController);
         
         server.setExecutor(Executors.newFixedThreadPool(10));
         server.start();
