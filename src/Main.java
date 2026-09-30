@@ -17,6 +17,11 @@ public class Main {
         DatabaseSeeder.seed();
 
         int port = 8080;
+        String envPort = System.getenv("PORT");
+        if (envPort != null && !envPort.isEmpty()) {
+            port = Integer.parseInt(envPort);
+        }
+        
         HttpServer server = null;
         
         while (port < 8100) {
