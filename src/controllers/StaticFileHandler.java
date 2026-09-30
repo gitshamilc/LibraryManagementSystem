@@ -31,7 +31,11 @@ public class StaticFileHandler implements HttpHandler {
         }
 
         if (!file.exists() || file.isDirectory()) {
-            exchange.sendResponseHeaders(404, -1);
+            String error = "JAVA_404_ERROR: Could not find " + file.getAbsolutePath();
+            byte[] errorBytes = error.getBytes();
+            exchange.sendResponseHeaders(404, errorBytes.length);
+            exchange.getResponseBody().write(errorBytes);
+            exchange.getResponseBody().close();
             return;
         }
 
