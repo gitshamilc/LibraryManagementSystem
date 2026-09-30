@@ -18,23 +18,27 @@ public class Main {
 
         int port = 8080;
         String envPort = System.getenv("PORT");
+        boolean isCloud = false;
         if (envPort != null && !envPort.isEmpty()) {
             port = Integer.parseInt(envPort);
+            isCloud = true;
         }
         
         HttpServer server = null;
+        int maxPort = isCloud ? port + 1 : 8100;
         
-        while (port < 8100) {
+        while (port < maxPort) {
             try {
-                server = HttpServer.create(new InetSocketAddress(port), 0);
+                server = HttpServer.create(new InetSocketAddress("0.0.0.0", port), 0);
                 break;
             } catch (IOException e) {
+                if (isCloud) throw new RuntimeException("Could not bind to cloud PORT " + port, e);
                 port++;
             }
         }
 
         if (server == null) {
-            System.err.println("Failed to start server: Could not bind to any port between 8080 and 8100.");
+            System.err.println("Failed to start server: Could not bind to port.");
             return;
         }
 
