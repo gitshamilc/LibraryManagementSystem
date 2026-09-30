@@ -101,7 +101,7 @@ public class UserDAO implements GenericDAO<User, String> {
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
-            return false;
+            throw new RuntimeException("DB_ERROR: " + e.getMessage());
         }
     }
 

@@ -91,11 +91,15 @@ public class ApiController implements HttpHandler {
         String newId = "U" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         User newUser = new User(newId, name, email, null, password, 3); // Role 3 = USER
 
-        boolean success = userDAO.save(newUser);
-        if (success) {
-            sendJsonResponse(exchange, 200, "{\"success\": true}");
-        } else {
-            sendJsonResponse(exchange, 400, "{\"success\": false, \"error\": \"Email may already exist.\"}");
+        try {
+            boolean success = userDAO.save(newUser);
+            if (success) {
+                sendJsonResponse(exchange, 200, "{\"success\": true}");
+            } else {
+                sendJsonResponse(exchange, 400, "{\"success\": false, \"error\": \"Email may already exist.\"}");
+            }
+        } catch (RuntimeException e) {
+            sendJsonResponse(exchange, 400, "{\"success\": false, \"error\": \"" + escape(e.getMessage()) + "\"}");
         }
     }
 
