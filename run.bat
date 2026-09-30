@@ -1,0 +1,3 @@
+@echo off
+echo Starting GP6 Library System...
+java -cp "out;lib/*" Main

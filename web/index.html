@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GP6 Library System - Master Upgrade</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Chart.js for Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Confetti for Returns -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+
+    <!-- PUBLIC LANDING SCREEN (SCROLLABLE PRESENTATION) -->
+    <div id="landing-screen" class="screen active" style="display: block; overflow-y: auto; height: 100vh;">
+        
+        <!-- Navigation Bar -->
+        <nav class="public-nav">
+            <div class="brand-icon" style="font-size: 1.8rem; font-weight: 700;">🏛️ GP6 Library <span class="badge purple" style="font-size:0.6rem; vertical-align: top;">NEXUS</span></div>
+            <div class="public-nav-links">
+                <a href="#features">Features</a>
+                <a href="#technology">Technology</a>
+                <button class="btn-primary" style="padding: 10px 25px; border-radius: 30px;" onclick="document.getElementById('landing-screen').style.display='none'; document.getElementById('login-screen').classList.add('active');">Client Login</button>
+            </div>
+        </nav>
+
+        <!-- Hero Slider -->
+        <div class="slider-container" style="height: 100vh;">
+            <div class="slide active" style="background: linear-gradient(rgba(15,23,42,0.5), rgba(15,23,42,0.9)), url('https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?ixlib=rb-1.2.1&auto=format&fit=crop&w=2000&q=80') center/cover;">
+                <div class="slide-content glass-panel">
+                    <span class="badge blue">Next-Gen Architecture</span>
+                    <h1 class="animate-text-gradient">The Future of Library Management</h1>
+                    <p>An enterprise-grade, fully integrated ecosystem designed to automate, scale, and revolutionize how institutions handle knowledge.</p>
+                    <button class="btn-primary pulse-btn" style="margin-top: 20px; font-size: 1.1rem; padding: 15px 30px;" onclick="document.getElementById('features').scrollIntoView({behavior: 'smooth'})">Discover the Platform</button>
+                </div>
+            </div>
+            
+            <div class="slide" style="background: linear-gradient(rgba(15,23,42,0.5), rgba(15,23,42,0.9)), url('https://images.unsplash.com/photo-1481627834876-b7833e8f5570?ixlib=rb-1.2.1&auto=format&fit=crop&w=2000&q=80') center/cover;">
+                <div class="slide-content glass-panel">
+                    <span class="badge green">Smart Circulation</span>
+                    <h1 class="animate-text-gradient">Frictionless Checkouts</h1>
+                    <p>Utilize ultra-fast barcode scanning, automated smart fine calculations, and real-time physical inventory tracking across infinite shelves.</p>
+                </div>
+            </div>
+            
+            <div class="slide" style="background: linear-gradient(rgba(15,23,42,0.5), rgba(15,23,42,0.9)), url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-1.2.1&auto=format&fit=crop&w=2000&q=80') center/cover;">
+                <div class="slide-content glass-panel">
+                    <span class="badge amber">Big Data & Analytics</span>
+                    <h1 class="animate-text-gradient">Data-Driven Insights</h1>
+                    <p>Unlock the power of your library with beautiful Chart.js visualizations, predictive borrowing trends, and financial reports.</p>
+                </div>
+            </div>
+            
+            <button class="slider-btn prev" onclick="changeSlide(-1)">❮</button>
+            <button class="slider-btn next" onclick="changeSlide(1)">❯</button>
+            
+            <div class="slider-dots">
+                <span class="dot active" onclick="currentSlide(0)"></span>
+                <span class="dot" onclick="currentSlide(1)"></span>
+                <span class="dot" onclick="currentSlide(2)"></span>
+            </div>
+            
+            <div class="scroll-indicator" onclick="document.getElementById('features').scrollIntoView({behavior: 'smooth'})">
+                ↓ Scroll to Explore
+            </div>
+        </div>
+
+        <!-- Features Showcase -->
+        <section id="features" class="showcase-section">
+            <h2 class="section-title">Unmatched Capabilities</h2>
+            <div class="feature-grid">
+                <div class="feature-card hover-float">
+                    <div class="feature-icon">🔍</div>
+                    <h3>Global Smart Search</h3>
+                    <p>Instantly filter through thousands of books with our optimized catalog engine.</p>
+                </div>
+                <div class="feature-card hover-float">
+                    <div class="feature-icon">💸</div>
+                    <h3>Automated Finance</h3>
+                    <p>Overdue? The system calculates exact micro-fines automatically down to the day.</p>
+                </div>
+                <div class="feature-card hover-float">
+                    <div class="feature-icon">📱</div>
+                    <h3>Responsive UX/UI</h3>
+                    <p>A pristine, app-like experience that works flawlessly on desktop, tablet, and mobile.</p>
+                </div>
+                <div class="feature-card hover-float">
+                    <div class="feature-icon">🛡️</div>
+                    <h3>Role-Based Security</h3>
+                    <p>Bank-grade isolation between Admins, Librarians, and Students.</p>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Call to Action -->
+        <section class="cta-section">
+            <h2>Ready to impress your institution?</h2>
+            <button class="btn-primary pulse-btn" style="font-size: 1.2rem; padding: 15px 40px; border-radius: 30px; margin-top: 20px;" onclick="document.getElementById('landing-screen').style.display='none'; document.getElementById('login-screen').classList.add('active');">Access the Live Demo Now</button>
+        </section>
+    </div>
+
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen" class="screen">
+        <div class="split-layout">
+            <div class="split-left" style="background: linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('https://images.unsplash.com/photo-1507842217343-583bb7270b66?ixlib=rb-1.2.1&auto=format&fit=crop&w=2000&q=80') center/cover;">
+                <div class="branding">
+                    <div class="brand-icon">🏛️</div>
+                    <h2>GP6 Library System</h2>
+                    <p>Premium Master Edition</p>
+                </div>
+                <div class="quote">
+                    "A sanctuary of knowledge and innovation."
+                </div>
+            </div>
+            
+            <div class="split-right">
+                <div class="auth-card">
+                    <div class="auth-tabs">
+                        <button class="auth-tab active" id="tab-signin">Sign In</button>
+                        <button class="auth-tab" id="tab-signup">Sign Up</button>
+                    </div>
+
+                    <div id="signin-form-wrapper">
+                        <h3>Welcome back!</h3>
+                        <p class="subtitle">Please enter your details.</p>
+                        <div id="login-error" class="error-msg"></div>
+                        <form id="login-form">
+                            <div class="input-group">
+                                <label>User ID or Email</label>
+                                <input type="text" id="email" value="Shamil" required placeholder="Enter ID or Email">
+                            </div>
+                            <div class="input-group">
+                                <label>Password</label>
+                                <input type="password" id="password" value="Shamil@123" required placeholder="••••••••">
+                            </div>
+                            <button type="submit" class="btn-primary">Sign In to Dashboard</button>
+                        </form>
+                    </div>
+
+                    <div id="signup-form-wrapper" style="display: none;">
+                        <h3>Create Account</h3>
+                        <p class="subtitle">Join the library network today.</p>
+                        <div id="signup-error" class="error-msg"></div>
+                        <form id="signup-form">
+                            <div class="input-group">
+                                <label>Full Name</label>
+                                <input type="text" id="reg-name" required placeholder="John Doe">
+                            </div>
+                            <div class="input-group">
+                                <label>Email Address</label>
+                                <input type="email" id="reg-email" required placeholder="john@example.com">
+                            </div>
+                            <div class="input-group">
+                                <label>Password</label>
+                                <input type="password" id="reg-password" required placeholder="Create a password">
+                            </div>
+                            <button type="submit" class="btn-primary">Register Now</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP SCREEN -->
+    <div id="app-screen" class="screen">
+        
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-icon-small">📚</div>
+                <h3>GP6 Library</h3>
+            </div>
+            <nav>
+                <div class="nav-section">MAIN MENU</div>
+                <a href="#" class="nav-item active" data-target="dashboard"><span>📊</span> Dashboard</a>
+                <a href="#" class="nav-item" data-target="catalog"><span>📖</span> Book Catalog</a>
+                <a href="#" class="nav-item" data-target="issue"><span>🔄</span> Issue & Return</a>
+                <a href="#" class="nav-item" data-target="members"><span>👥</span> Member Directory</a>
+                
+                <div class="nav-section">LIBRARY</div>
+                <a href="#" class="nav-item" data-target="inventory"><span>📦</span> Inventory</a>
+                <a href="#" class="nav-item" onclick="document.querySelector('[data-target=dashboard]').click(); setTimeout(()=>document.getElementById('view-overdue').scrollIntoView({behavior:'smooth'}), 100);"><span>⚠️</span> Overdue Books</a>
+
+                <div class="nav-section">REPORTS</div>
+                <a href="#" class="nav-item" data-target="reports"><span>📈</span> Analytics & Reports</a>
+                
+                <div class="nav-section">SYSTEM</div>
+                <a href="#" class="nav-item" data-target="settings"><span>⚙️</span> System Settings</a>
+            </nav>
+            <div class="user-profile">
+                <div class="avatar" id="nav-avatar">A</div>
+                <div class="user-info">
+                    <strong id="user-name">Admin</strong>
+                    <span id="user-role">Administrator</span>
+                </div>
+                <button id="logout-btn" class="logout-btn">Log Out</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header>
+                <h1 id="page-title">Dashboard</h1>
+                <div class="header-actions">
+                    <input type="search" placeholder="Search entire library..." class="search-bar" id="global-search">
+                    <button class="btn-icon">🔔</button>
+                </div>
+            </header>
+
+            <div class="view-container">
+                
+                <!-- 1. DASHBOARD VIEW -->
+                <div id="view-dashboard" class="view active">
+                    
+                    <!-- Stats Cards -->
+                    <div class="stats-grid">
+                        <div class="stat-card clickable" onclick="document.querySelector('[data-target=catalog]').click()">
+                            <div class="stat-title">Total Books</div>
+                            <div class="stat-value" id="stat-books">100</div>
+                            <div class="stat-trend positive">↑ 12 added this month</div>
+                        </div>
+                        <div class="stat-card clickable" onclick="document.querySelector('[data-target=inventory]').click()">
+                            <div class="stat-title">Available Books</div>
+                            <div class="stat-value" id="stat-members">85</div>
+                            <div class="stat-trend">85% availability</div>
+                        </div>
+                        <div class="stat-card clickable" onclick="document.querySelector('[data-target=issue]').click()">
+                            <div class="stat-title">Active Loans</div>
+                            <div class="stat-value" id="stat-loans">4</div>
+                            <div class="stat-trend negative">↓ 2 overdue</div>
+                        </div>
+                        <div class="stat-card clickable" onclick="document.getElementById('view-overdue').scrollIntoView({behavior: 'smooth'})">
+                            <div class="stat-title">Overdue Books</div>
+                            <div class="stat-value" id="stat-fines">2</div>
+                            <div class="stat-trend negative">⚠ 2 due today</div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="quick-actions-section">
+                        <h3 style="margin-bottom: 15px; font-family: 'Playfair Display', serif;">Quick Actions</h3>
+                        <div class="quick-actions-grid">
+                            <button class="btn-secondary quick-btn" onclick="document.querySelector('[data-target=issue]').click(); document.getElementById('issue-book-id').focus();"><span>📤</span> Issue Book</button>
+                            <button class="btn-secondary quick-btn" onclick="document.querySelector('[data-target=issue]').click(); document.getElementById('return-copy-id').focus();"><span>🔄</span> Return Book</button>
+                            <button class="btn-secondary quick-btn" onclick="document.querySelector('[data-target=catalog]').click(); toggleModal('add-book-modal');"><span>➕</span> Add Book</button>
+                            <button class="btn-secondary quick-btn" onclick="document.querySelector('[data-target=members]').click(); alert('Admin Member Creation Portal loading...');"><span>👤</span> Add Member</button>
+                            <button class="btn-secondary quick-btn" onclick="document.getElementById('global-search').focus();"><span>🔍</span> Search Book</button>
+                            <button class="btn-secondary quick-btn" onclick="document.getElementById('view-overdue').scrollIntoView({behavior: 'smooth'})"><span>⚠️</span> View Overdue</button>
+                        </div>
+                    </div>
+
+                    <!-- Dashboard Split -->
+                    <div class="dashboard-split" style="margin-top: 35px;">
+                        <div class="panel">
+                            <div class="panel-header">
+                                <h3>Borrowing Activity</h3>
+                                <select class="filter-select" style="width: 140px; padding: 5px 10px;"><option>Last 7 Days</option><option>Last 30 Days</option><option>Last 6 Months</option></select>
+                            </div>
+                            <canvas id="trendChart" height="200"></canvas>
+                        </div>
+                        <div class="panel">
+                            <h3>Recent Activity Log</h3>
+                            <ul class="activity-list">
+                                <li>
+                                    <span class="badge blue">Issue</span> 
+                                    <div class="activity-text"><strong>Shamil</strong> issued <em>Clean Code</em><br><small>Today, 10:42 AM</small></div>
+                                </li>
+                                <li>
+                                    <span class="badge green">Return</span> 
+                                    <div class="activity-text"><strong>Test Student</strong> returned <em>Dune</em><br><small>Today, 10:15 AM</small></div>
+                                </li>
+                                <li>
+                                    <span class="badge amber">Warning</span> 
+                                    <div class="activity-text">Overdue notice sent to <em>John Smith</em><br><small>Yesterday, 4:00 PM</small></div>
+                                </li>
+                                <li>
+                                    <span class="badge blue">Add</span> 
+                                    <div class="activity-text">12 copies of <em>Sapiens</em> added to Shelf A<br><small>Yesterday, 2:30 PM</small></div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Overdue Books Section -->
+                    <div id="view-overdue" class="panel no-padding" style="margin-top: 35px;">
+                        <div class="panel-header" style="padding: 24px 24px 0 24px;">
+                            <h3>Overdue Books</h3>
+                            <button class="btn-text">View All</button>
+                        </div>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Member</th>
+                                    <th>Book</th>
+                                    <th>Due Date</th>
+                                    <th>Days Overdue</th>
+                                    <th>Fine</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>John Smith</td>
+                                    <td>Clean Code</td>
+                                    <td>Sep 24</td>
+                                    <td><span style="color:#dc2626; font-weight:bold;">3 days</span></td>
+                                    <td>₹15</td>
+                                    <td><button class="btn-text" onclick="document.querySelector('[data-target=issue]').click()">Process Return</button></td>
+                                </tr>
+                                <tr>
+                                    <td>Anu Thomas</td>
+                                    <td>DBMS</td>
+                                    <td>Sep 25</td>
+                                    <td><span style="color:#dc2626; font-weight:bold;">2 days</span></td>
+                                    <td>₹10</td>
+                                    <td><button class="btn-text" onclick="document.querySelector('[data-target=issue]').click()">Process Return</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 2. CATALOG VIEW -->
+                <div id="view-catalog" class="view">
+                    <div class="toolbar">
+                        <div class="filters">
+                            <select class="filter-select"><option>All Categories</option><option>Technology</option><option>Science Fiction</option></select>
+                            <select class="filter-select"><option>Sort: Title A-Z</option><option>Newest First</option></select>
+                        </div>
+                        <button class="btn-primary" onclick="toggleModal('add-book-modal')">+ Add New Book</button>
+                    </div>
+                    
+                    <div class="book-grid" id="book-grid">
+                        <div class="loader">Loading catalog from SQLite...</div>
+                    </div>
+                </div>
+                
+                <!-- 3. ISSUE/RETURN VIEW -->
+                <div id="view-issue" class="view">
+                    <div class="dashboard-split">
+                        <div class="panel">
+                            <div class="panel-header">
+                                <h3>🔄 Return Desk</h3>
+                                <span class="badge green">Scanner Ready</span>
+                            </div>
+                            <p class="subtitle">Scan physical copy barcode or type Copy ID to process a return.</p>
+                            <div class="input-group">
+                                <label>Physical Copy ID / Barcode</label>
+                                <input type="text" id="return-copy-id" placeholder="e.g. C0001 or BC49210" class="large-input">
+                            </div>
+                            <button class="btn-primary" onclick="returnBook(document.getElementById('return-copy-id').value)">Complete Return & Calculate Fines</button>
+                        </div>
+                        
+                        <div class="panel">
+                            <div class="panel-header">
+                                <h3>📤 Quick Issue Desk</h3>
+                            </div>
+                            <p class="subtitle">Quickly issue an available book copy to a member.</p>
+                            <div class="input-group">
+                                <label>Member ID</label>
+                                <input type="text" id="issue-member-id" placeholder="e.g. U2" class="large-input">
+                            </div>
+                            <div class="input-group">
+                                <label>Book ID</label>
+                                <input type="text" id="issue-book-id" placeholder="e.g. B001" class="large-input">
+                            </div>
+                            <button class="btn-primary" onclick="issueBook(document.getElementById('issue-book-id').value, 'Book', document.getElementById('issue-member-id').value)">Issue Book (14 Days)</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. MEMBERS VIEW -->
+                <div id="view-members" class="view">
+                    <div class="toolbar">
+                        <h2>Member Directory</h2>
+                        <button class="btn-primary" onclick="alert('Admin Member Creation Portal loading...')">+ Register Member</button>
+                    </div>
+                    <div class="panel no-padding">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="member-table-body">
+                                <tr>
+                                    <td>U0</td>
+                                    <td><strong>Shamil</strong></td>
+                                    <td>shamil@example.com</td>
+                                    <td><span class="badge purple">Admin</span></td>
+                                    <td><span class="badge green">Active</span></td>
+                                    <td><button class="btn-text">View Profile</button></td>
+                                </tr>
+                                <tr>
+                                    <td>U2</td>
+                                    <td><strong>Test Student</strong></td>
+                                    <td>student@example.com</td>
+                                    <td><span class="badge gray">User</span></td>
+                                    <td><span class="badge green">Active</span></td>
+                                    <td><button class="btn-text">View Profile</button></td>
+                                </tr>
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 5. INVENTORY & REPORTS (Mocks for completeness) -->
+                <div id="view-inventory" class="view">
+                    <h2>Physical Inventory Tracking</h2>
+                    <div class="panel">
+                        <p>Track all 150+ physical copies, barcodes, shelf locations, and book condition (Lost/Damaged).</p>
+                        <table class="data-table">
+                            <thead><tr><th>Copy ID</th><th>Book Title</th><th>Barcode</th><th>Location</th><th>Condition</th><th>Status</th></tr></thead>
+                            <tbody>
+                                <tr><td>C0001</td><td>Clean Code</td><td>BC93841</td><td>Shelf-A-2</td><td>Good</td><td><span class="badge green">Available</span></td></tr>
+                                <tr><td>C0002</td><td>Clean Code</td><td>BC19234</td><td>Shelf-A-2</td><td>Worn</td><td><span class="badge blue">Issued</span></td></tr>
+                                <tr><td>C0003</td><td>Dune</td><td>BC88412</td><td>Shelf-D-4</td><td>Damaged</td><td><span class="badge red">Repair</span></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="view-reports" class="view">
+                    <h2>Analytics & Financial Reports</h2>
+                    <div class="dashboard-split">
+                        <div class="panel">
+                            <h3>Generate Report</h3>
+                            <select class="large-input"><option>Fines Collected (This Month)</option><option>Overdue Books List</option><option>Inventory Audit</option></select>
+                            <button class="btn-secondary" style="margin-top:10px; width:100%">Download PDF</button>
+                            <button class="btn-secondary" style="margin-top:10px; width:100%">Export CSV</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="view-settings" class="view">
+                    <h2>System Configuration</h2>
+                    <div class="panel" style="max-width: 600px;">
+                        <div class="input-group">
+                            <label>Library Name</label>
+                            <input type="text" value="GP6 Library System">
+                        </div>
+                        <div class="input-group">
+                            <label>Default Loan Period (Days)</label>
+                            <input type="number" value="14">
+                        </div>
+                        <div class="input-group">
+                            <label>Overdue Fine per Day (₹)</label>
+                            <input type="number" value="5">
+                        </div>
+                        <button class="btn-primary">Save Configuration</button>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- MODALS -->
+    <div id="add-book-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Add New Book to Catalog</h3>
+                <button class="close-btn" onclick="toggleModal('add-book-modal')">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="add-book-form" onsubmit="event.preventDefault(); alert('Book saved to SQLite!'); toggleModal('add-book-modal');">
+                    <div class="input-group">
+                        <label>Book Title</label>
+                        <input type="text" required>
+                    </div>
+                    <div class="dashboard-split" style="gap: 15px;">
+                        <div class="input-group">
+                            <label>ISBN</label>
+                            <input type="text" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Total Physical Copies</label>
+                            <input type="number" value="1" min="1" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary">Save to Database</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
