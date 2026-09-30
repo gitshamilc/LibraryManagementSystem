@@ -80,6 +80,7 @@ public class DatabaseManager {
             safeInsert(stmt, "INSERT INTO users (id, name, email, password_hash, role_id) VALUES ('U2', 'Test Student', 'student', 'student123', 3)");
 
         } catch (SQLException e) {
+            lastInitError += "CONNECTION_ERROR: " + e.getMessage();
             e.printStackTrace();
             System.err.println("Failed to initialize database schema.");
         }
