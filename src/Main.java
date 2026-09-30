@@ -17,7 +17,10 @@ public class Main {
         if (!DatabaseManager.isPostgres()) {
             DatabaseSeeder.seed();
         } else {
-            System.out.println("Skipping Seeder for Cloud Postgres (too slow on startup).");
+            System.out.println("Starting Cloud Postgres Seeder in background...");
+            new Thread(() -> {
+                DatabaseSeeder.seed();
+            }).start();
         }
 
         int port = 8080;
