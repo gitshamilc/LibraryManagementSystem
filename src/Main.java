@@ -48,8 +48,11 @@ public class Main {
         // REST API endpoints
         ApiController apiController = new ApiController();
         server.createContext("/api/login", apiController);
+        server.createContext("/api/signup", apiController);
         server.createContext("/api/stats", apiController);
         server.createContext("/api/books", apiController);
+        server.createContext("/api/issue", apiController);
+        server.createContext("/api/return", apiController);
         
         server.setExecutor(Executors.newFixedThreadPool(10));
         server.start();
