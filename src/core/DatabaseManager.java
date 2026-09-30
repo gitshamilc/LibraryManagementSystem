@@ -29,8 +29,6 @@ public class DatabaseManager {
         }
     }
 
-    public static String lastInitError = "";
-
     public static Connection getConnection() throws SQLException {
         return DriverManager.getConnection(DB_URL);
     }
@@ -40,7 +38,6 @@ public class DatabaseManager {
     }
 
     public static void initializeDatabase() {
-        lastInitError = "";
         if (!isPostgres) {
             new File("db").mkdirs();
         }
@@ -80,7 +77,6 @@ public class DatabaseManager {
             safeInsert(stmt, "INSERT INTO users (id, name, email, password_hash, role_id) VALUES ('U2', 'Test Student', 'student', 'student123', 3)");
 
         } catch (SQLException e) {
-            lastInitError += "CONNECTION_ERROR: " + e.getMessage();
             e.printStackTrace();
             System.err.println("Failed to initialize database schema.");
         }
@@ -90,7 +86,6 @@ public class DatabaseManager {
         try {
             stmt.execute(sql);
         } catch (SQLException e) {
-            lastInitError += e.getMessage() + " | ";
             System.err.println("SQL Execution Failed for: " + sql);
             e.printStackTrace();
         }
