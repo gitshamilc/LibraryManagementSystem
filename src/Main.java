@@ -54,6 +54,22 @@ public class Main {
         server.createContext("/api/issue", apiController);
         server.createContext("/api/return", apiController);
         server.createContext("/api/members", apiController);
+        server.createContext("/api/db-debug", exchange -> {
+            try {
+                DatabaseManager.initializeDatabase();
+                String err = DatabaseManager.lastInitError;
+                byte[] response = ("{\"status\": \"Init Triggered\", \"errors\": \"" + err + "\"}").getBytes();
+                exchange.getResponseHeaders().set("Content-Type", "application/json");
+                exchange.sendResponseHeaders(200, response.length);
+                exchange.getResponseBody().write(response);
+            } catch (Exception e) {
+                byte[] response = ("{\"error\": \"" + e.getMessage() + "\"}").getBytes();
+                exchange.getResponseHeaders().set("Content-Type", "application/json");
+                exchange.sendResponseHeaders(500, response.length);
+                exchange.getResponseBody().write(response);
+            }
+            exchange.close();
+        });
         
         server.setExecutor(Executors.newFixedThreadPool(10));
         server.start();

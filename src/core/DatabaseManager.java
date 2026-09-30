@@ -29,6 +29,8 @@ public class DatabaseManager {
         }
     }
 
+    public static String lastInitError = "";
+
     public static Connection getConnection() throws SQLException {
         return DriverManager.getConnection(DB_URL);
     }
@@ -38,6 +40,7 @@ public class DatabaseManager {
     }
 
     public static void initializeDatabase() {
+        lastInitError = "";
         if (!isPostgres) {
             new File("db").mkdirs();
         }
@@ -86,6 +89,7 @@ public class DatabaseManager {
         try {
             stmt.execute(sql);
         } catch (SQLException e) {
+            lastInitError += e.getMessage() + " | ";
             System.err.println("SQL Execution Failed for: " + sql);
             e.printStackTrace();
         }
