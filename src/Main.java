@@ -14,7 +14,11 @@ public class Main {
     public static void main(String[] args) {
         System.out.println("Initializing Database...");
         DatabaseManager.initializeDatabase();
-        DatabaseSeeder.seed();
+        if (!DatabaseManager.isPostgres()) {
+            DatabaseSeeder.seed();
+        } else {
+            System.out.println("Skipping Seeder for Cloud Postgres (too slow on startup).");
+        }
 
         int port = 8080;
         String envPort = System.getenv("PORT");
