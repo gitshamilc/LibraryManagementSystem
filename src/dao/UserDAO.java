@@ -91,7 +91,11 @@ public class UserDAO implements GenericDAO<User, String> {
             ps.setString(1, entity.getId());
             ps.setString(2, entity.getName());
             ps.setString(3, entity.getEmail());
-            ps.setString(4, entity.getPhone());
+            if (entity.getPhone() == null) {
+                ps.setNull(4, java.sql.Types.VARCHAR);
+            } else {
+                ps.setString(4, entity.getPhone());
+            }
             ps.setString(5, entity.getPasswordHash());
             ps.setInt(6, entity.getRoleId());
             return ps.executeUpdate() > 0;
