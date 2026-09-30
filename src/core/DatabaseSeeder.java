@@ -21,6 +21,7 @@ public class DatabaseSeeder {
             System.out.println("Seeding database with realistic data...");
             conn.setAutoCommit(false);
 
+            String[] categories = {"Technology", "Science Fiction", "History", "Philosophy", "Mathematics", "Art", "Literature", "Biography"};
             String insertOrIgnore = DatabaseManager.isPostgres() ? "ON CONFLICT DO NOTHING" : "OR IGNORE";
             String catSql = DatabaseManager.isPostgres() ? "INSERT INTO categories (name) VALUES (?) ON CONFLICT (name) DO NOTHING" : "INSERT OR IGNORE INTO categories (name) VALUES (?)";
             for (String cat : categories) {

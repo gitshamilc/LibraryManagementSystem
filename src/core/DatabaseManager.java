@@ -33,6 +33,10 @@ public class DatabaseManager {
         return DriverManager.getConnection(DB_URL);
     }
 
+    public static boolean isPostgres() {
+        return isPostgres;
+    }
+
     public static void initializeDatabase() {
         if (!isPostgres) {
             new File("db").mkdirs();
