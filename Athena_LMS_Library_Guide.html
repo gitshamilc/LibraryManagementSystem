@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Athena LMS - Official Library Operations Manual</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <style>
+        @page {
+            size: A4;
+            margin: 10mm 14mm 10mm 14mm;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: #1e293b;
+            background-color: #ffffff;
+            line-height: 1.45;
+            font-size: 12.5px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: white;
+            padding: 18px 22px;
+            border-radius: 10px;
+            margin-bottom: 16px;
+            border-left: 6px solid #c29352;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+        }
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+        .badge {
+            display: inline-block;
+            background: #c29352;
+            color: #0f172a;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            padding: 2px 8px;
+            border-radius: 20px;
+            letter-spacing: 0.5px;
+        }
+        .version {
+            font-size: 11px;
+            color: #94a3b8;
+        }
+        .header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 24px;
+            color: #ffffff;
+            margin-bottom: 3px;
+            letter-spacing: 0.2px;
+        }
+        .header p {
+            color: #cbd5e1;
+            font-size: 12px;
+            font-weight: 400;
+        }
+
+        h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 16px;
+            color: #0f172a;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 4px;
+            margin-top: 16px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        h2 .section-num {
+            background: #0f172a;
+            color: #c29352;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 10.5px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        h3 {
+            font-size: 13.5px;
+            color: #0f172a;
+            margin-top: 10px;
+            margin-bottom: 5px;
+            font-weight: 700;
+        }
+
+        p {
+            margin-bottom: 8px;
+            color: #334155;
+        }
+
+        .architecture-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 12px 0 16px 0;
+        }
+        .arch-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+        .arch-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+        .arch-title {
+            font-weight: 700;
+            font-size: 12px;
+            color: #0f172a;
+            margin-bottom: 4px;
+        }
+        .arch-desc {
+            font-size: 10.5px;
+            color: #64748b;
+            line-height: 1.35;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0 16px 0;
+            font-size: 12px;
+        }
+        th, td {
+            padding: 7px 10px;
+            text-align: left;
+            border: 1px solid #e2e8f0;
+        }
+        th {
+            background-color: #0f172a;
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+
+        .step-container {
+            margin-bottom: 12px;
+            border-left: 3px solid #c29352;
+            padding: 8px 14px;
+            background: #fafaf9;
+            border-radius: 0 8px 8px 0;
+            page-break-inside: avoid;
+        }
+        .step-title {
+            font-weight: 700;
+            font-size: 13px;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 4px;
+        }
+        .step-badge {
+            background: #c29352;
+            color: #0f172a;
+            font-size: 10px;
+            font-weight: 800;
+            padding: 1px 6px;
+            border-radius: 3px;
+        }
+        .step-body {
+            font-size: 12px;
+            color: #334155;
+        }
+        .step-body ul {
+            margin-left: 18px;
+            margin-top: 4px;
+        }
+        .step-body li {
+            margin-bottom: 3px;
+        }
+
+        .callout {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-left: 4px solid #3b82f6;
+            padding: 10px 14px;
+            border-radius: 6px;
+            margin: 12px 0;
+            font-size: 12px;
+            page-break-inside: avoid;
+        }
+        .callout-title {
+            font-weight: 700;
+            color: #1e3a8a;
+            margin-bottom: 3px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .callout-body {
+            color: #1e40af;
+        }
+
+        .gold-callout {
+            background: #fffbeb;
+            border: 1px solid #fef3c7;
+            border-left: 4px solid #c29352;
+            padding: 10px 14px;
+            border-radius: 6px;
+            margin: 12px 0;
+            font-size: 12px;
+            page-break-inside: avoid;
+        }
+        .gold-callout-title {
+            font-weight: 700;
+            color: #78350f;
+            margin-bottom: 3px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .gold-callout-body {
+            color: #92400e;
+        }
+
+        .footer {
+            margin-top: 25px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 10px;
+            text-align: center;
+            font-size: 10px;
+            color: #94a3b8;
+            page-break-inside: avoid;
+        }
+
+        .tag {
+            display: inline-block;
+            background: #e2e8f0;
+            color: #334155;
+            padding: 1px 6px;
+            border-radius: 3px;
+            font-weight: 600;
+            font-size: 10.5px;
+            font-family: monospace;
+        }
+
+        .page-break {
+            page-break-before: always;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- COVER / HEADER -->
+    <div class="header">
+        <div class="header-top">
+            <span class="badge">🏛️ Enterprise Edition</span>
+            <span class="version">System Guide • October 2026</span>
+        </div>
+        <h1>Athena Library Management System</h1>
+        <p>Complete Operational Handbook & Day-to-Day Staff Workflow Manual</p>
+    </div>
+
+    <!-- 1. SYSTEM OVERVIEW -->
+    <h2><span class="section-num">01</span> System Overview & Cloud Architecture</h2>
+    <p>Athena LMS is a full-stack, enterprise-grade library management system. It is designed to automate physical inventory cataloging, streamline book circulation, eliminate overdue tracking paperwork, and deliver 24/7 uptime.</p>
+    
+    <div class="architecture-grid">
+        <div class="arch-card">
+            <div class="arch-icon">📱</div>
+            <div class="arch-title">Responsive UI</div>
+            <div class="arch-desc">Optimized for desktops, circulation desk monitors, tablets, and smartphones.</div>
+        </div>
+        <div class="arch-card">
+            <div class="arch-icon">☕</div>
+            <div class="arch-title">Java Server</div>
+            <div class="arch-desc">Multi-threaded native Java backend engine with high-concurrency connection pooling.</div>
+        </div>
+        <div class="arch-card">
+            <div class="arch-icon">☁️</div>
+            <div class="arch-title">Supabase Cloud</div>
+            <div class="arch-desc">PostgreSQL cloud storage with live cross-device synchronization and foreign key integrity.</div>
+        </div>
+        <div class="arch-card">
+            <div class="arch-icon">🛡️</div>
+            <div class="arch-title">SQLite Fallback</div>
+            <div class="arch-desc">Embedded database failover guaranteeing continuous operation even if cloud pauses.</div>
+        </div>
+    </div>
+
+    <!-- 2. USER ROLES -->
+    <h2><span class="section-num">02</span> User Roles & Access Hierarchy</h2>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 20%;">Role</th>
+                <th style="width: 30%;">Credentials / Access</th>
+                <th style="width: 50%;">Permissions & Operational Scope</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Administrator</strong></td>
+                <td><span class="tag">sa@gmail.com</span><br><span class="tag">shamilc12</span></td>
+                <td>Full system governance: Catalog new books, issue & return books, manage users, configure fine engines, view circulation audit logs and analytics.</td>
+            </tr>
+            <tr>
+                <td><strong>Librarian / Staff</strong></td>
+                <td>Assigned by Administrator</td>
+                <td>Circulation desk operations: Issue loans, process returns, calculate late fees, search shelf coordinates.</td>
+            </tr>
+            <tr>
+                <td><strong>Student Patron</strong></td>
+                <td>Self-registered via portal</td>
+                <td>Catalog discovery: Search books by title/author/ISBN, view physical availability, inspect personal active loans and due dates.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="gold-callout">
+        <div class="gold-callout-title">🔑 Administrator Master Account</div>
+        <div class="gold-callout-body">The primary admin account (<strong>sa@gmail.com</strong> / <strong>shamilc12</strong>) is permanently pre-seeded into the database. You will never be locked out even during server container redeployments.</div>
+    </div>
+
+    <!-- 3. DAILY LIBRARY WORKFLOW -->
+    <h2><span class="section-num">03</span> Daily Library Operations (Step-by-Step)</h2>
+
+    <div class="step-container">
+        <div class="step-title"><span class="step-badge">STEP 1</span> Starting the Workday & Staff Login</div>
+        <div class="step-body">
+            <ul>
+                <li>Open your library URL on the circulation desk PC or tablet.</li>
+                <li>Click <strong>"Client Login"</strong> or <strong>"Enter System Dashboard"</strong>.</li>
+                <li>Enter your staff or administrator credentials and click <strong>"Sign In to Dashboard"</strong>.</li>
+                <li><em>Security feature:</em> The login form automatically clears upon loading and locks out third-party browser autofill to prevent unauthorized access.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="step-container">
+        <div class="step-title"><span class="step-badge">STEP 2</span> Cataloging New Books & Shelf Placement</div>
+        <div class="step-body">
+            The system separates <strong>Book Titles</strong> from <strong>Physical Copies</strong> (e.g., 1 title can have 5 physical copies with individual barcodes).
+            <ul>
+                <li>Navigate to <strong>"Book Catalog"</strong> from the menu.</li>
+                <li>Click the gold <strong>"+ Add New Book"</strong> button.</li>
+                <li>Fill in the metadata: <em>Title</em>, <em>Author</em>, <em>ISBN</em>, <em>Category</em>, <em>Total Copies</em> (e.g. 3), and <em>Shelf Coordinate</em> (e.g. <code>Rack B-2, Shelf 4</code>).</li>
+                <li>Click <strong>"Save Book"</strong>. The system automatically creates the book title and generates 3 available physical copy records assigned to that shelf coordinate.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="step-container">
+        <div class="step-title"><span class="step-badge">STEP 3</span> Registering Members & Students</div>
+        <div class="step-body">
+            <ul>
+                <li><strong>Self-Service:</strong> Students can open the website, switch to the <strong>"Register"</strong> tab, enter their Name, Email, and a password (minimum 6 characters with both letters & numbers).</li>
+                <li><strong>Staff Verification:</strong> Librarians can navigate to the <strong>"Members"</strong> directory to view all registered patrons, their unique IDs (e.g. <code>U1</code>, <code>U2</code>), and their active loan counts.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="step-container">
+        <div class="step-title"><span class="step-badge">STEP 4</span> Issuing a Book to a Member (Borrowing Desk)</div>
+        <div class="step-body">
+            When a patron brings a physical book to the circulation counter:
+            <ul>
+                <li>Click <strong>"Issue Book"</strong> on the Dashboard or Catalog screen.</li>
+                <li><strong>Member Identifier:</strong> Type the patron's <em>Member ID</em> (e.g. <code>U1</code>), <em>Email</em> (<code>student@example.com</code>), or <em>Full Name</em>.</li>
+                <li><strong>Book Identifier:</strong> Type the <em>Book ID</em>, <em>ISBN</em>, or scan the <em>Copy Barcode</em>.</li>
+                <li>Click <strong>"Confirm Issue"</strong>.</li>
+                <li><strong>Validation Engine:</strong> The system verifies that the student has not exceeded the <strong>5-book maximum borrowing limit</strong> and that a copy is physically available. It sets an automated <strong>14-day due date</strong> and marks the copy as <code>ISSUED</code>.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="step-container">
+        <div class="step-title"><span class="step-badge">STEP 5</span> Processing Returns & Automated Fine Engine</div>
+        <div class="step-body">
+            When a patron returns a borrowed book:
+            <ul>
+                <li>Click <strong>"Return Book"</strong> at the circulation desk.</li>
+                <li>Enter the <em>Book ID</em>, <em>Copy Barcode</em>, or <em>Transaction ID</em>.</li>
+                <li>Click <strong>"Process Return"</strong>.</li>
+                <li><strong>On-Time Return:</strong> The book copy is immediately restored to <code>AVAILABLE</code> status, the transaction is marked <code>RETURNED</code>, and celebration confetti displays on screen.</li>
+                <li><strong>Late Return (Fine Engine):</strong> If the book is returned past its 14-day due date, the system calculates late fines at <strong>₹5 per overdue day</strong> and logs an unpaid fine record linked to the student.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="step-container">
+        <div class="step-title"><span class="step-badge">STEP 6</span> Dashboard Metrics & Overdue Tracking</div>
+        <div class="step-body">
+            <ul>
+                <li><strong>KPI Cards:</strong> Real-time counts of <em>Total Books</em>, <em>Active Loans</em>, <em>Overdue Books</em>, and <em>Total Members</em>.</li>
+                <li><strong>Circulation Trend Analytics:</strong> Chart.js visualization showing monthly circulation patterns to assist in book acquisition planning.</li>
+                <li><strong>Live Activity Feed:</strong> Real-time audit log recording every loan checkout and return timestamp.</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- 4. HARDWARE & BEST PRACTICES -->
+    <h2><span class="section-num">04</span> Physical Library Setup & Best Practices</h2>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">Hardware / Practice</th>
+                <th style="width: 35%;">Setup Details</th>
+                <th style="width: 40%;">Benefit to Library Staff</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Barcode Scanner</strong></td>
+                <td>Standard USB or Bluetooth 1D/2D laser barcode scanner plugged into the desk PC.</td>
+                <td>Scanners act as rapid keyboard entry: scanning a book barcode instantly populates the Issue and Return fields with zero typing errors.</td>
+            </tr>
+            <tr>
+                <td><strong>Shelf Rack Labeling</strong></td>
+                <td>Print physical stickers for shelves matching your catalog coordinates (e.g. <code>Rack A, Shelf 1</code>).</td>
+                <td>Students and library assistants can locate any title in under 30 seconds by checking the "Shelf Location" column in the catalog.</td>
+            </tr>
+            <tr>
+                <td><strong>Mobile Aisle Tablet</strong></td>
+                <td>iPad, Android tablet, or smartphone connected to Wi-Fi.</td>
+                <td>Staff can perform physical inventory audits directly in the library aisles without carrying books back to the main desk.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- 5. QUICK REFERENCE -->
+    <h2><span class="section-num">05</span> Circulation Rules Quick Reference</h2>
+    <div class="callout">
+        <div class="callout-title">📋 Circulation Engine Parameters</div>
+        <div class="callout-body">
+            • <strong>Standard Borrowing Period:</strong> 14 Calendar Days<br>
+            • <strong>Maximum Loans per Patron:</strong> 5 Books simultaneously<br>
+            • <strong>Late Fine Rate:</strong> ₹5.00 per day past the due date<br>
+            • <strong>Search Filters:</strong> Real-time instant filtering across Title, Author, Category, and ISBN<br>
+            • <strong>Data Storage:</strong> Dual PostgreSQL (Supabase) + Local SQLite Fallback
+        </div>
+    </div>
+
+    <div class="footer">
+        Athena Library Management System • Enterprise Cloud Edition • Document Generated for Library Staff
+    </div>
+
+</body>
+</html>
