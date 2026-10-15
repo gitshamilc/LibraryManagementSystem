@@ -619,6 +619,7 @@ function filterAvailableOnly() {
 function renderBooks(books) {
     const grid = document.getElementById('book-grid');
     grid.innerHTML = '';
+    window.booksById = window.booksById || {};
     
     if (books.length === 0) {
         grid.innerHTML = '<div class="loader">No books found matching the selected filters.</div>';
@@ -626,6 +627,7 @@ function renderBooks(books) {
     }
     
     books.forEach(book => {
+        window.booksById[book.id] = book;
         const card = document.createElement('div');
         card.className = 'book-card';
         
@@ -649,9 +651,9 @@ function renderBooks(books) {
                     <p class="book-desc">${book.description || 'No description available.'}</p>
                 </div>
                 <div class="book-actions">
-                    <button class="btn-text" onclick='showBookDetailsModal(${JSON.stringify(book).replace(/'/g, "&apos;")})'>Details</button>
+                    <button class="btn-text" onclick="showBookDetailsModal('${book.id}')">Details</button>
                     <button class="btn-primary" style="padding: 8px 16px; width: auto; font-size: 0.9rem;" 
-                        onclick="prepareIssue('${book.id}', '${book.title.replace(/'/g, "\\'")}')">Issue Book</button>
+                        onclick="prepareIssue('${book.id}')">Issue Book</button>
                 </div>
             </div>
         `;
@@ -659,7 +661,9 @@ function renderBooks(books) {
     });
 }
 
-function prepareIssue(bookId, bookTitle) {
+function prepareIssue(bookId) {
+    const book = (window.booksById && window.booksById[bookId]) || allBooksCache.find(b => b.id === bookId);
+    const bookTitle = book ? book.title : bookId;
     switchView('issue');
     const input = document.getElementById('issue-book-id');
     input.value = bookId;
@@ -667,7 +671,10 @@ function prepareIssue(bookId, bookTitle) {
     showToast(`Selected "${bookTitle}" for checkout. Enter Member ID to complete.`, 'info');
 }
 
-function showBookDetailsModal(book) {
+function showBookDetailsModal(bookId) {
+    const book = (window.booksById && window.booksById[bookId]) || allBooksCache.find(b => b.id === bookId);
+    if (!book) return;
+    
     document.getElementById('modal-book-title').textContent = book.title;
     document.getElementById('modal-book-author').textContent = `by ${book.author || 'Unknown'}`;
     document.getElementById('modal-book-category').textContent = book.category || 'General';
@@ -687,11 +694,16 @@ function showBookDetailsModal(book) {
     const issueBtn = document.getElementById('modal-issue-book-btn');
     issueBtn.onclick = () => {
         toggleModal('book-details-modal');
-        prepareIssue(book.id, book.title);
+        prepareIssue(book.id);
     };
     
     toggleModal('book-details-modal');
 }
+
+window.showBookDetailsModal = showBookDetailsModal;
+window.prepareIssue = prepareIssue;
+window.filterAvailableOnly = filterAvailableOnly;
+window.switchView = switchView;
 
 // --- 4. ISSUE & RETURN WORKFLOW ---
 async function processIssue() {
@@ -941,47 +953,51 @@ document.getElementById('member-search-input').addEventListener('input', (e) => 
 // --- 8. CHART INITIALIZATION ---
 let myChart = null;
 function initChart() {
-    const ctx = document.getElementById('trendChart');
-    if (!ctx) return;
-    
-    if (myChart) myChart.destroy();
-    
-    myChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: ['May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'],
-            datasets: [{
-                label: 'Books Circulated',
-                data: [18, 27, 34, 45, 52, 68],
-                borderColor: '#c29352',
-                backgroundColor: 'rgba(194, 147, 82, 0.12)',
-                borderWidth: 3,
-                tension: 0.35,
-                fill: true,
-                pointBackgroundColor: '#c29352',
-                pointRadius: 4
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: '#0f172a',
-                    padding: 10,
-                    cornerRadius: 8
-                }
+    try {
+        const ctx = document.getElementById('trendChart');
+        if (!ctx || typeof Chart === 'undefined') return;
+        
+        if (myChart) myChart.destroy();
+        
+        myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'],
+                datasets: [{
+                    label: 'Books Circulated',
+                    data: [18, 27, 34, 45, 52, 68],
+                    borderColor: '#c29352',
+                    backgroundColor: 'rgba(194, 147, 82, 0.12)',
+                    borderWidth: 3,
+                    tension: 0.35,
+                    fill: true,
+                    pointBackgroundColor: '#c29352',
+                    pointRadius: 4
+                }]
             },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: { color: 'rgba(0,0,0,0.05)' }
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#0f172a',
+                        padding: 10,
+                        cornerRadius: 8
+                    }
                 },
-                x: {
-                    grid: { display: false }
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(0,0,0,0.05)' }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
                 }
             }
-        }
-    });
+        });
+    } catch (e) {
+        console.warn('Chart initialization deferred:', e);
+    }
 }

@@ -217,10 +217,10 @@
             </div>
             <nav>
                 <div class="nav-section">MAIN MENU</div>
-                <a href="#" class="nav-item active" data-target="dashboard"><span>📊</span> Dashboard</a>
-                <a href="#" class="nav-item" data-target="catalog"><span>📖</span> Book Catalog</a>
-                <a href="#" class="nav-item" data-target="issue"><span>🔄</span> Issue & Return</a>
-                <a href="#" class="nav-item" data-target="members"><span>👥</span> Member Directory</a>
+                <a href="#" class="nav-item active" data-target="dashboard"><span>📊</span> <span class="nav-label">Dashboard</span></a>
+                <a href="#" class="nav-item" data-target="catalog"><span>📖</span> <span class="nav-label">Book Catalog</span></a>
+                <a href="#" class="nav-item" data-target="issue"><span>🔄</span> <span class="nav-label">Issue & Return</span></a>
+                <a href="#" class="nav-item" data-target="members"><span>👥</span> <span class="nav-label">Members</span></a>
             </nav>
             <div class="user-profile">
                 <div class="avatar" id="nav-avatar">A</div>
@@ -238,6 +238,7 @@
                 <div class="header-actions">
                     <input type="search" placeholder="Search catalog by title, author, or ID..." class="search-bar" id="global-search">
                     <button class="btn-icon" title="View Overdue Notifications" onclick="document.querySelector('[data-target=dashboard]').click(); document.getElementById('view-overdue').scrollIntoView({behavior: 'smooth'});">🔔</button>
+                    <button class="btn-icon mobile-logout-btn" title="Sign Out" onclick="document.getElementById('logout-btn').click();" style="display: none;">🚪</button>
                 </div>
             </header>
 
