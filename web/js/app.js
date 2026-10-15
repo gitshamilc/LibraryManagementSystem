@@ -308,19 +308,15 @@ loginForm.addEventListener('submit', async (e) => {
         if (data.success) {
             currentUser = data;
             document.getElementById('user-name').textContent = data.name;
-            document.getElementById('user-role').textContent = data.role || (data.roleId === 1 ? 'Administrator' : 'Student Patron');
+            document.getElementById('user-role').textContent = data.role || (data.roleId === 1 ? 'Administrator' : (data.roleId === 2 ? 'Librarian' : 'Student Patron'));
             document.getElementById('nav-avatar').textContent = data.name.charAt(0).toUpperCase();
             
             // Switch screen
             loginScreen.classList.remove('active');
             appScreen.classList.add('active');
             
-            showToast(`Welcome back, ${data.name}!`, 'success');
-            
-            // Load all dashboard components
-            loadDashboardStats();
-            loadLoansAndActivity();
-            initChart();
+            // Apply role-based redirection to matching portal
+            applyRolePermissions(data);
         } else {
             loginError.textContent = data.error || 'Invalid user credentials.';
             loginError.style.display = 'block';
@@ -331,7 +327,7 @@ loginForm.addEventListener('submit', async (e) => {
         console.error(err);
     } finally {
         btn.disabled = false;
-        btn.textContent = 'Sign In to Dashboard';
+        btn.textContent = 'Sign In to Library Portal';
     }
 });
 
@@ -410,6 +406,10 @@ document.getElementById('logout-btn').addEventListener('click', () => {
     appScreen.classList.remove('active');
     loginScreen.classList.add('active');
     clearAuthForms();
+    // Reset nav items visibility to default
+    document.querySelectorAll('.admin-only-nav').forEach(el => el.style.display = '');
+    document.querySelectorAll('.student-only-nav').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.admin-only-btn').forEach(el => el.style.display = '');
     showToast('You have been logged out safely.', 'info');
 });
 
@@ -429,6 +429,7 @@ navItems.forEach(item => {
         const targetElem = document.getElementById(`view-${targetView}`);
         if (targetElem) targetElem.classList.add('active');
         
+        if (targetView === 'student-portal') loadStudentPortalData();
         if (targetView === 'dashboard') {
             loadDashboardStats();
             loadLoansAndActivity();
@@ -442,7 +443,175 @@ navItems.forEach(item => {
 
 function switchView(target) {
     const navBtn = document.querySelector(`.nav-item[data-target="${target}"]`);
-    if (navBtn) navBtn.click();
+    if (navBtn) {
+        navBtn.click();
+    } else {
+        views.forEach(v => v.classList.remove('active'));
+        const targetElem = document.getElementById(`view-${target}`);
+        if (targetElem) targetElem.classList.add('active');
+        if (target === 'student-portal') loadStudentPortalData();
+        else if (target === 'dashboard') loadDashboardStats();
+    }
+}
+
+// --- ROLE-BASED ACCESS CONTROL & REDIRECTION ---
+function applyRolePermissions(user) {
+    const isAdminOrLibrarian = user.roleId === 1 || user.roleId === 2 || 
+                               (user.role && (user.role.toLowerCase().includes('admin') || user.role.toLowerCase().includes('librarian')));
+    
+    const adminNavs = document.querySelectorAll('.admin-only-nav');
+    const studentNavs = document.querySelectorAll('.student-only-nav');
+    const adminBtns = document.querySelectorAll('.admin-only-btn');
+    const navSectionTitle = document.getElementById('nav-section-title');
+    
+    if (isAdminOrLibrarian) {
+        if (navSectionTitle) navSectionTitle.textContent = 'ADMINISTRATOR';
+        adminNavs.forEach(el => el.style.display = '');
+        studentNavs.forEach(el => el.style.display = 'none');
+        adminBtns.forEach(el => el.style.display = '');
+        
+        // Redirect to Admin Dashboard
+        switchView('dashboard');
+        loadDashboardStats();
+        loadLoansAndActivity();
+        initChart();
+        showToast(`Welcome back, ${user.name}! (Staff Administrator)`, 'success');
+    } else {
+        if (navSectionTitle) navSectionTitle.textContent = 'PATRON MENU';
+        adminNavs.forEach(el => el.style.display = 'none');
+        studentNavs.forEach(el => el.style.display = '');
+        adminBtns.forEach(el => el.style.display = 'none');
+        
+        // Redirect to Student Portal
+        switchView('student-portal');
+        loadStudentPortalData();
+        showToast(`Welcome, ${user.name}! (Student Library Portal)`, 'success');
+    }
+}
+
+// --- STUDENT PORTAL LOGIC ---
+async function loadStudentPortalData() {
+    if (!currentUser) return;
+    
+    const welcomeEl = document.getElementById('student-welcome-name');
+    if (welcomeEl) welcomeEl.textContent = `Welcome, ${currentUser.name}!`;
+    
+    const idEl = document.getElementById('student-portal-id');
+    if (idEl) idEl.textContent = currentUser.userId || '--';
+    
+    const emailEl = document.getElementById('student-portal-email');
+    if (emailEl) emailEl.textContent = currentUser.email || '--';
+    
+    const tbody = document.getElementById('student-loans-tbody');
+    if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">Loading your borrowed books...</td></tr>`;
+
+    try {
+        const [loansRes, statsRes] = await Promise.all([
+            fetch(`${API_BASE}/loans`),
+            fetch(`${API_BASE}/stats`)
+        ]);
+        const loans = await loansRes.json();
+        const stats = await statsRes.json();
+        allLoansCache = loans;
+        
+        // Update catalog stats
+        const catStatEl = document.getElementById('student-stat-catalog');
+        if (catStatEl) catStatEl.textContent = stats.totalBooks ? `${stats.totalBooks} Titles` : '500+ Titles';
+        
+        // Filter personal loans
+        const myUserId = (currentUser.userId || '').toLowerCase();
+        const myEmail = (currentUser.email || '').toLowerCase();
+        const myName = (currentUser.name || '').toLowerCase();
+        
+        const myLoans = loans.filter(l => {
+            const uId = (l.userId || '').toLowerCase();
+            const uEmail = (l.userEmail || '').toLowerCase();
+            const uName = (l.userName || '').toLowerCase();
+            return (myUserId && uId === myUserId) || (myEmail && uEmail === myEmail) || (myName && uName === myName);
+        });
+        
+        const activeLoans = myLoans.filter(l => l.status === 'ACTIVE');
+        const overdueLoans = activeLoans.filter(l => l.isOverdue);
+        
+        // Calculate fines
+        let totalFines = 0;
+        overdueLoans.forEach(l => {
+            totalFines += (l.fine || (l.daysOverdue * 5.0) || 0);
+        });
+        
+        // Update quota and stats
+        const activeStatEl = document.getElementById('student-stat-active');
+        if (activeStatEl) activeStatEl.textContent = activeLoans.length;
+        
+        const quotaEl = document.getElementById('student-quota-text');
+        if (quotaEl) {
+            quotaEl.textContent = `${activeLoans.length} / 5 Books`;
+            quotaEl.style.color = activeLoans.length >= 5 ? '#dc2626' : (activeLoans.length >= 4 ? '#d97706' : '#16a34a');
+        }
+        
+        const overdueStatEl = document.getElementById('student-stat-overdue');
+        const overdueSubEl = document.getElementById('student-stat-overdue-sub');
+        if (overdueStatEl) overdueStatEl.textContent = overdueLoans.length;
+        if (overdueSubEl) {
+            if (overdueLoans.length > 0) {
+                overdueSubEl.textContent = 'Please return overdue items!';
+                overdueSubEl.style.color = '#dc2626';
+            } else {
+                overdueSubEl.textContent = 'All loans up-to-date';
+                overdueSubEl.style.color = '#16a34a';
+            }
+        }
+        
+        const finesStatEl = document.getElementById('student-stat-fines');
+        if (finesStatEl) finesStatEl.textContent = `₹${totalFines.toFixed(2)}`;
+        
+        // Render personal loans table
+        if (!tbody) return;
+        if (activeLoans.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 40px 20px;">
+                        <div style="font-size: 2.2rem; margin-bottom: 8px;">📚</div>
+                        <h4 style="font-size: 1.15rem; color: #0f172a; margin-bottom: 4px; font-family: 'Playfair Display', serif;">No Active Borrowed Books</h4>
+                        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 15px;">You currently have 0 books checked out. Explore the library catalog to find your next book!</p>
+                        <button class="btn-primary" style="width: auto; padding: 10px 24px; border-radius: 20px;" onclick="document.querySelector('[data-target=catalog]').click()">Browse Library Catalog</button>
+                    </td>
+                </tr>
+            `;
+        } else {
+            tbody.innerHTML = activeLoans.map(loan => {
+                let timeRemainingBadge = '';
+                if (loan.isOverdue) {
+                    const fineAmt = loan.fine || (loan.daysOverdue * 5.0);
+                    timeRemainingBadge = `<strong style="color: #dc2626;">Overdue • Fine ₹${fineAmt.toFixed(2)}</strong>`;
+                } else {
+                    const today = new Date();
+                    const due = new Date(loan.dueDate);
+                    const diffTime = due - today;
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    if (diffDays <= 0) {
+                        timeRemainingBadge = `<strong style="color: #d97706;">Due Today</strong>`;
+                    } else {
+                        timeRemainingBadge = `<span style="color: #16a34a; font-weight: 600;">Due in ${diffDays} day${diffDays === 1 ? '' : 's'}</span>`;
+                    }
+                }
+                
+                return `
+                    <tr>
+                        <td><strong>${loan.bookTitle || 'Untitled Book'}</strong></td>
+                        <td><span class="code-badge">${loan.copyId || '--'}</span></td>
+                        <td>${loan.issueDate || '--'}</td>
+                        <td>${loan.dueDate || '--'}</td>
+                        <td>${loan.isOverdue ? '<span class="badge red">Overdue</span>' : '<span class="badge green">Active Loan</span>'}</td>
+                        <td>${timeRemainingBadge}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+    } catch (err) {
+        console.error('Failed to load student portal data:', err);
+        if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #dc2626; padding: 25px;">Unable to load your borrowed books. Please check server connection.</td></tr>`;
+    }
 }
 
 // --- 1. DASHBOARD DATA & REAL STATS ---

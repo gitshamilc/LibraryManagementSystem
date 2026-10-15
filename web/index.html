@@ -146,6 +146,11 @@
                     <div id="signin-form-wrapper">
                         <h3>Welcome back!</h3>
                         <p class="subtitle">Please enter your credentials.</p>
+                        <div class="login-role-hint">
+                            <span>🛡️ Staff Admin</span>
+                            <span class="dot-separator">•</span>
+                            <span>🎓 Student Patron</span>
+                        </div>
                         <div id="login-error" class="error-msg"></div>
                         <form id="login-form" autocomplete="off">
                             <div class="input-group">
@@ -159,7 +164,7 @@
                                     <button type="button" class="password-toggle-btn" id="toggle-signin-password" title="Show/Hide Password">👁️</button>
                                 </div>
                             </div>
-                            <button type="submit" class="btn-primary" id="login-submit-btn">Sign In to Dashboard</button>
+                            <button type="submit" class="btn-primary" id="login-submit-btn">Sign In to Library Portal</button>
                         </form>
                     </div>
 
@@ -215,11 +220,12 @@
                 <h3>Athena Library</h3>
             </div>
             <nav>
-                <div class="nav-section">MAIN MENU</div>
-                <a href="#" class="nav-item active" data-target="dashboard"><span>📊</span> <span class="nav-label">Dashboard</span></a>
+                <div class="nav-section" id="nav-section-title">ADMINISTRATOR</div>
+                <a href="#" class="nav-item active admin-only-nav" data-target="dashboard"><span>📊</span> <span class="nav-label">Dashboard</span></a>
+                <a href="#" class="nav-item student-only-nav" data-target="student-portal" style="display: none;"><span>📚</span> <span class="nav-label">My Books</span></a>
                 <a href="#" class="nav-item" data-target="catalog"><span>📖</span> <span class="nav-label">Book Catalog</span></a>
-                <a href="#" class="nav-item" data-target="issue"><span>🔄</span> <span class="nav-label">Issue & Return</span></a>
-                <a href="#" class="nav-item" data-target="members"><span>👥</span> <span class="nav-label">Members</span></a>
+                <a href="#" class="nav-item admin-only-nav" data-target="issue"><span>🔄</span> <span class="nav-label">Issue & Return</span></a>
+                <a href="#" class="nav-item admin-only-nav" data-target="members"><span>👥</span> <span class="nav-label">Members</span></a>
             </nav>
             <div class="user-profile">
                 <div class="avatar" id="nav-avatar">A</div>
@@ -243,6 +249,84 @@
 
             <div class="view-container">
                 
+                <!-- 0. STUDENT PATRON PORTAL VIEW -->
+                <div id="view-student-portal" class="view">
+                    <!-- Student Hero Welcome -->
+                    <div class="student-hero-card">
+                        <div class="student-hero-info">
+                            <span class="badge gold" style="font-size: 0.75rem;">🎓 Patron Portal</span>
+                            <h2 id="student-welcome-name" style="margin: 6px 0; font-family: 'Playfair Display', serif; font-size: 1.8rem; color: #0f172a;">Welcome, Student!</h2>
+                            <p style="color: var(--text-muted); margin-bottom: 0;">Member ID: <strong id="student-portal-id" class="code-badge">--</strong> • Email: <span id="student-portal-email">--</span></p>
+                        </div>
+                        <div class="student-hero-badge" id="student-borrow-quota-badge">
+                            <span style="font-size: 0.85rem; color: var(--text-muted);">Borrowing Quota</span>
+                            <strong id="student-quota-text" style="font-size: 1.4rem; color: #16a34a;">0 / 5 Books</strong>
+                        </div>
+                    </div>
+
+                    <!-- Student Stats -->
+                    <div class="stats-grid" style="margin-top: 20px;">
+                        <div class="stat-card">
+                            <div class="stat-title">Currently Borrowed</div>
+                            <div class="stat-value" id="student-stat-active">0</div>
+                            <div class="stat-trend" id="student-stat-active-sub">Max 5 allowed</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-title">Overdue Books</div>
+                            <div class="stat-value" id="student-stat-overdue">0</div>
+                            <div class="stat-trend" id="student-stat-overdue-sub" style="color: #16a34a;">All loans up-to-date</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-title">Unpaid Fines</div>
+                            <div class="stat-value" id="student-stat-fines">₹0</div>
+                            <div class="stat-trend" style="color: #64748b;">₹5/day for late returns</div>
+                        </div>
+                        <div class="stat-card clickable" onclick="document.querySelector('[data-target=catalog]').click()">
+                            <div class="stat-title">Catalog Titles</div>
+                            <div class="stat-value" id="student-stat-catalog">--</div>
+                            <div class="stat-trend positive">Explore catalog ➔</div>
+                        </div>
+                    </div>
+
+                    <!-- My Borrowed Books Panel -->
+                    <div class="panel no-padding" style="margin-top: 25px;">
+                        <div class="panel-header" style="padding: 20px 24px 15px 24px;">
+                            <div>
+                                <h3 style="font-size: 1.2rem; margin-bottom: 3px;">📚 My Active Borrowed Books</h3>
+                                <p class="subtitle" style="margin-bottom: 0;">Physical books currently issued to your library account.</p>
+                            </div>
+                            <button class="btn-secondary" onclick="loadStudentPortalData()" style="padding: 8px 16px; font-size: 0.85rem;">🔄 Refresh</button>
+                        </div>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Book Title</th>
+                                    <th>Copy Barcode</th>
+                                    <th>Issue Date</th>
+                                    <th>Due Date</th>
+                                    <th>Status</th>
+                                    <th>Days Remaining / Fine</th>
+                                </tr>
+                            </thead>
+                            <tbody id="student-loans-tbody">
+                                <tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">Loading your loans...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Browse Library Shortcut Banner -->
+                    <div class="student-cta-card" style="margin-top: 25px;">
+                        <div class="student-cta-content">
+                            <div style="font-size: 2.2rem;">📖</div>
+                            <div>
+                                <h4 style="font-size: 1.15rem; margin-bottom: 4px; font-family: 'Playfair Display', serif;">Looking for your next book?</h4>
+                                <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 0;">Explore titles across Technology, Science Fiction, Literature, Mathematics, and History.</p>
+                            </div>
+                        </div>
+                        <button class="btn-primary" style="width: auto; padding: 12px 24px; border-radius: 25px;" onclick="document.querySelector('[data-target=catalog]').click()">Browse Full Catalog</button>
+                    </div>
+                </div>
+
                 <!-- 1. DASHBOARD VIEW -->
                 <div id="view-dashboard" class="view active">
                     <!-- Stats Cards -->
@@ -334,7 +418,7 @@
                                 <option value="COPIES">Sort: Most Copies</option>
                             </select>
                         </div>
-                        <button class="btn-primary" style="width: auto; padding: 10px 20px;" onclick="toggleModal('add-book-modal')">+ Add New Book</button>
+                        <button class="btn-primary admin-only-btn" style="width: auto; padding: 10px 20px;" onclick="toggleModal('add-book-modal')">+ Add New Book</button>
                     </div>
                     
                     <div class="book-grid" id="book-grid">

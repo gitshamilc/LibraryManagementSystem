@@ -548,4 +548,69 @@ header h1 { font-family: 'Playfair Display', serif; font-size: 1.6rem; color: va
     font-weight: 600;
 }
 
+/* --- ROLE-BASED PORTALS & STUDENT VIEWS --- */
+.student-hero-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: var(--shadow);
+    flex-wrap: wrap;
+    gap: 16px;
+    border-left: 6px solid var(--primary);
+}
+.student-hero-badge {
+    background: #f1f5f9;
+    border: 1px solid var(--border);
+    padding: 12px 22px;
+    border-radius: 12px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+}
+.student-cta-card {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    color: white;
+    padding: 24px 28px;
+    border-radius: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    border-left: 6px solid var(--primary);
+    box-shadow: var(--shadow);
+}
+.student-cta-content {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+.code-badge {
+    background: #e2e8f0;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.85rem;
+    color: #0f172a;
+}
+.login-role-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 15px;
+}
+.login-role-hint .dot-separator {
+    color: #cbd5e1;
+}
+
 
