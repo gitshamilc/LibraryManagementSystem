@@ -2,9 +2,8 @@ package controllers;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
-import dao.BookDAO;
+import core.DatabaseManager;
 import dao.UserDAO;
-import models.Book;
 import models.User;
 import services.CirculationService;
 
@@ -12,13 +11,19 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Map;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 public class ApiController implements HttpHandler {
-    private final BookDAO bookDAO = new BookDAO();
     private final UserDAO userDAO = new UserDAO();
+    private final CirculationService circulationService = new CirculationService();
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
@@ -44,18 +49,24 @@ public class ApiController implements HttpHandler {
                 handleStats(exchange);
             } else if (path.equals("/api/books") && "GET".equalsIgnoreCase(method)) {
                 handleGetBooks(exchange);
+            } else if (path.equals("/api/books") && "POST".equalsIgnoreCase(method)) {
+                handleAddBook(exchange);
             } else if (path.equals("/api/issue") && "POST".equalsIgnoreCase(method)) {
                 handleIssue(exchange);
             } else if (path.equals("/api/return") && "POST".equalsIgnoreCase(method)) {
                 handleReturn(exchange);
             } else if (path.equals("/api/members") && "GET".equalsIgnoreCase(method)) {
                 handleGetMembers(exchange);
+            } else if (path.equals("/api/members") && "POST".equalsIgnoreCase(method)) {
+                handleAddMember(exchange);
+            } else if (path.equals("/api/loans") && "GET".equalsIgnoreCase(method)) {
+                handleGetLoans(exchange);
             } else {
                 sendJsonResponse(exchange, 404, "{\"error\": \"Endpoint not found\"}");
             }
         } catch (Exception e) {
             e.printStackTrace();
-            sendJsonResponse(exchange, 500, "{\"error\": \"Internal server error\"}");
+            sendJsonResponse(exchange, 500, "{\"error\": \"Internal server error: " + escape(e.getMessage()) + "\"}");
         }
     }
 
@@ -67,11 +78,12 @@ public class ApiController implements HttpHandler {
 
         User user = userDAO.authenticate(email, password);
         if (user != null) {
-            String json = String.format("{\"success\": true, \"userId\": \"%s\", \"name\": \"%s\", \"roleId\": %d}", 
-                user.getId(), user.getName(), user.getRoleId());
+            String roleName = user.getRoleId() == 1 ? "Administrator" : (user.getRoleId() == 2 ? "Librarian" : "Student");
+            String json = String.format("{\"success\": true, \"userId\": \"%s\", \"name\": \"%s\", \"email\": \"%s\", \"roleId\": %d, \"role\": \"%s\"}", 
+                user.getId(), escape(user.getName()), escape(user.getEmail()), user.getRoleId(), roleName);
             sendJsonResponse(exchange, 200, json);
         } else {
-            sendJsonResponse(exchange, 401, "{\"success\": false, \"error\": \"Invalid credentials\"}");
+            sendJsonResponse(exchange, 401, "{\"success\": false, \"error\": \"Invalid email/user ID or password\"}");
         }
     }
 
@@ -82,19 +94,18 @@ public class ApiController implements HttpHandler {
         String email = data.get("email");
         String password = data.get("password");
 
-        if (name == null || email == null || password == null) {
-            sendJsonResponse(exchange, 400, "{\"success\": false, \"error\": \"Missing required fields\"}");
+        if (name == null || email == null || password == null || name.trim().isEmpty() || email.trim().isEmpty() || password.trim().isEmpty()) {
+            sendJsonResponse(exchange, 400, "{\"success\": false, \"error\": \"All fields are required.\"}");
             return;
         }
 
-        UserDAO userDAO = new UserDAO();
-        String newId = "U" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-        User newUser = new User(newId, name, email, null, password, 3); // Role 3 = USER
+        String newId = "U" + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
+        User newUser = new User(newId, name.trim(), email.trim().toLowerCase(), null, password, 3); // Role 3 = Student/User
 
         try {
             boolean success = userDAO.save(newUser);
             if (success) {
-                sendJsonResponse(exchange, 200, "{\"success\": true}");
+                sendJsonResponse(exchange, 200, "{\"success\": true, \"userId\": \"" + newId + "\"}");
             } else {
                 sendJsonResponse(exchange, 400, "{\"success\": false, \"error\": \"Email may already exist.\"}");
             }
@@ -103,21 +114,323 @@ public class ApiController implements HttpHandler {
         }
     }
 
+    private void handleAddMember(HttpExchange exchange) throws IOException {
+        String body = readBody(exchange);
+        Map<String, String> data = parseJson(body);
+        String name = data.get("name");
+        String email = data.get("email");
+        String password = data.get("password");
+        String roleStr = data.get("role");
+
+        if (name == null || email == null || password == null) {
+            sendJsonResponse(exchange, 400, "{\"success\": false, \"error\": \"Name, email, and password are required.\"}");
+            return;
+        }
+
+        int roleId = 3;
+        if ("Admin".equalsIgnoreCase(roleStr)) roleId = 1;
+        else if ("Librarian".equalsIgnoreCase(roleStr)) roleId = 2;
+
+        String newId = "U" + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
+        User newUser = new User(newId, name.trim(), email.trim().toLowerCase(), null, password, roleId);
+
+        try {
+            boolean success = userDAO.save(newUser);
+            if (success) {
+                sendJsonResponse(exchange, 200, "{\"success\": true, \"message\": \"Member created successfully!\", \"userId\": \"" + newId + "\"}");
+            } else {
+                sendJsonResponse(exchange, 400, "{\"success\": false, \"error\": \"Email already registered.\"}");
+            }
+        } catch (RuntimeException e) {
+            sendJsonResponse(exchange, 400, "{\"success\": false, \"error\": \"" + escape(e.getMessage()) + "\"}");
+        }
+    }
+
     private void handleStats(HttpExchange exchange) throws IOException {
-        // Mock stats for now, in a real app this comes from aggregate DB queries
-        String json = "{\"totalBooks\": 100, \"activeMembers\": 30, \"activeLoans\": 45, \"overdueBooks\": 3, \"finesCollected\": 125.50}";
+        int totalBooks = 0;
+        int availableBooks = 0;
+        int totalCopies = 0;
+        int activeMembers = 0;
+        int activeLoans = 0;
+        int overdueBooks = 0;
+        double finesCollected = 0.0;
+
+        try (Connection conn = DatabaseManager.getConnection()) {
+            // Total titles
+            try (ResultSet rs = conn.createStatement().executeQuery("SELECT COUNT(*) FROM books")) {
+                if (rs.next()) totalBooks = rs.getInt(1);
+            }
+
+            // Total physical copies
+            try (ResultSet rs = conn.createStatement().executeQuery("SELECT COUNT(*) FROM book_copies")) {
+                if (rs.next()) totalCopies = rs.getInt(1);
+            }
+
+            // Available physical copies
+            try (ResultSet rs = conn.createStatement().executeQuery("SELECT COUNT(*) FROM book_copies WHERE status = 'AVAILABLE'")) {
+                if (rs.next()) availableBooks = rs.getInt(1);
+            }
+
+            // Active members
+            try (ResultSet rs = conn.createStatement().executeQuery("SELECT COUNT(*) FROM users")) {
+                if (rs.next()) activeMembers = rs.getInt(1);
+            }
+
+            // Active loans
+            try (ResultSet rs = conn.createStatement().executeQuery("SELECT COUNT(*) FROM transactions WHERE status = 'ACTIVE'")) {
+                if (rs.next()) activeLoans = rs.getInt(1);
+            }
+
+            // Overdue loans (due_date < current date)
+            String today = LocalDate.now().toString();
+            try (PreparedStatement ps = conn.prepareStatement("SELECT COUNT(*) FROM transactions WHERE status = 'ACTIVE' AND due_date < ?")) {
+                ps.setString(1, today);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) overdueBooks = rs.getInt(1);
+                }
+            }
+
+            // Fines
+            try (ResultSet rs = conn.createStatement().executeQuery("SELECT COALESCE(SUM(amount), 0) FROM fines")) {
+                if (rs.next()) finesCollected = rs.getDouble(1);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        String json = String.format(
+            "{\"totalBooks\": %d, \"availableBooks\": %d, \"totalCopies\": %d, \"activeMembers\": %d, \"activeLoans\": %d, \"overdueBooks\": %d, \"finesCollected\": %.2f}",
+            totalBooks, availableBooks, totalCopies, activeMembers, activeLoans, overdueBooks, finesCollected
+        );
         sendJsonResponse(exchange, 200, json);
     }
 
     private void handleGetBooks(HttpExchange exchange) throws IOException {
-        List<Book> books = bookDAO.findAll();
         StringBuilder sb = new StringBuilder("[");
-        for (int i = 0; i < books.size(); i++) {
-            Book b = books.get(i);
-            sb.append(String.format("{\"id\":\"%s\",\"title\":\"%s\",\"authorId\":%d,\"categoryId\":%d,\"coverUrl\":\"%s\",\"description\":\"%s\"}",
-                b.getId(), escape(b.getTitle()), b.getAuthorId(), b.getCategoryId(), b.getCoverImageUrl(), escape(b.getDescription())));
-            if (i < books.size() - 1) sb.append(",");
+        String sql = "SELECT b.id, b.title, b.isbn, b.cover_image_url, b.description, " +
+                     "COALESCE(a.name, 'Various Authors') as author_name, " +
+                     "COALESCE(c.name, 'General') as category_name, " +
+                     "COALESCE((SELECT COUNT(*) FROM book_copies bc WHERE bc.book_id = b.id), 0) as total_copies, " +
+                     "COALESCE((SELECT COUNT(*) FROM book_copies bc WHERE bc.book_id = b.id AND bc.status = 'AVAILABLE'), 0) as available_copies " +
+                     "FROM books b " +
+                     "LEFT JOIN authors a ON b.author_id = a.id " +
+                     "LEFT JOIN categories c ON b.category_id = c.id " +
+                     "ORDER BY b.id ASC";
+
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            boolean first = true;
+            while (rs.next()) {
+                if (!first) sb.append(",");
+                first = false;
+
+                String id = rs.getString("id");
+                String title = rs.getString("title");
+                String isbn = rs.getString("isbn");
+                String cover = rs.getString("cover_image_url");
+                String desc = rs.getString("description");
+                String author = rs.getString("author_name");
+                String category = rs.getString("category_name");
+                int totalCopies = rs.getInt("total_copies");
+                int availableCopies = rs.getInt("available_copies");
+
+                sb.append(String.format(
+                    "{\"id\":\"%s\",\"title\":\"%s\",\"isbn\":\"%s\",\"author\":\"%s\",\"category\":\"%s\",\"coverUrl\":\"%s\",\"description\":\"%s\",\"totalCopies\":%d,\"availableCopies\":%d}",
+                    escape(id), escape(title), escape(isbn), escape(author), escape(category),
+                    escape(cover != null ? cover : ""), escape(desc != null ? desc : ""), totalCopies, availableCopies
+                ));
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
+
+        sb.append("]");
+        sendJsonResponse(exchange, 200, sb.toString());
+    }
+
+    private void handleAddBook(HttpExchange exchange) throws IOException {
+        String body = readBody(exchange);
+        Map<String, String> data = parseJson(body);
+
+        String title = data.get("title");
+        String isbn = data.get("isbn");
+        String author = data.get("author");
+        String category = data.get("category");
+        String copiesStr = data.get("copies");
+
+        if (title == null || title.trim().isEmpty()) {
+            sendJsonResponse(exchange, 400, "{\"success\": false, \"error\": \"Book title is required.\"}");
+            return;
+        }
+
+        int numCopies = 1;
+        try {
+            if (copiesStr != null) numCopies = Math.max(1, Integer.parseInt(copiesStr.trim()));
+        } catch (NumberFormatException ignored) {}
+
+        if (isbn == null || isbn.trim().isEmpty()) {
+            isbn = "978-" + (100 + (int)(Math.random() * 899)) + "-" + (10000 + (int)(Math.random() * 89999)) + "-X";
+        }
+        if (author == null || author.trim().isEmpty()) author = "Standard Library Author";
+        if (category == null || category.trim().isEmpty()) category = "General";
+
+        try (Connection conn = DatabaseManager.getConnection()) {
+            conn.setAutoCommit(false);
+
+            // 1. Author
+            int authorId = 1;
+            PreparedStatement aPs = conn.prepareStatement("SELECT id FROM authors WHERE LOWER(name) = ?");
+            aPs.setString(1, author.trim().toLowerCase());
+            ResultSet aRs = aPs.executeQuery();
+            if (aRs.next()) {
+                authorId = aRs.getInt("id");
+            } else {
+                PreparedStatement insA = conn.prepareStatement("INSERT INTO authors (name) VALUES (?)", PreparedStatement.RETURN_GENERATED_KEYS);
+                insA.setString(1, author.trim());
+                insA.executeUpdate();
+                ResultSet gk = insA.getGeneratedKeys();
+                if (gk.next()) authorId = gk.getInt(1);
+            }
+
+            // 2. Category
+            int categoryId = 1;
+            PreparedStatement cPs = conn.prepareStatement("SELECT id FROM categories WHERE LOWER(name) = ?");
+            cPs.setString(1, category.trim().toLowerCase());
+            ResultSet cRs = cPs.executeQuery();
+            if (cRs.next()) {
+                categoryId = cRs.getInt("id");
+            } else {
+                PreparedStatement insC = conn.prepareStatement("INSERT INTO categories (name) VALUES (?)", PreparedStatement.RETURN_GENERATED_KEYS);
+                insC.setString(1, category.trim());
+                insC.executeUpdate();
+                ResultSet gk = insC.getGeneratedKeys();
+                if (gk.next()) categoryId = gk.getInt(1);
+            }
+
+            // 3. New Book ID
+            int count = 1;
+            try (ResultSet cntRs = conn.createStatement().executeQuery("SELECT COUNT(*) FROM books")) {
+                if (cntRs.next()) count = cntRs.getInt(1) + 1;
+            }
+            String bookId = "B" + String.format("%04d", count);
+
+            // Cover gradient
+            String[] colors = {"#1e3a8a", "#064e3b", "#701a75", "#7c2d12", "#0f172a", "#831843", "#14532d", "#312e81"};
+            String color1 = colors[(int)(Math.random() * colors.length)];
+            String color2 = colors[(int)(Math.random() * colors.length)];
+            String cover = "linear-gradient(135deg, " + color1 + ", " + color2 + ")";
+            String desc = "A comprehensive and engaging work on " + title.trim() + " by " + author.trim() + ".";
+
+            PreparedStatement insBook = conn.prepareStatement(
+                "INSERT INTO books (id, title, isbn, author_id, category_id, publisher_id, cover_image_url, description) VALUES (?, ?, ?, ?, ?, 1, ?, ?)"
+            );
+            insBook.setString(1, bookId);
+            insBook.setString(2, title.trim());
+            insBook.setString(3, isbn.trim());
+            insBook.setInt(4, authorId);
+            insBook.setInt(5, categoryId);
+            insBook.setString(6, cover);
+            insBook.setString(7, desc);
+            insBook.executeUpdate();
+
+            // 4. Create Physical Copies
+            int existingCopies = 0;
+            try (ResultSet ecRs = conn.createStatement().executeQuery("SELECT COUNT(*) FROM book_copies")) {
+                if (ecRs.next()) existingCopies = ecRs.getInt(1);
+            }
+
+            for (int i = 1; i <= numCopies; i++) {
+                String copyId = "C" + String.format("%04d", existingCopies + i);
+                String barcode = "BC" + (100000 + (int)(Math.random() * 899999));
+                PreparedStatement insCopy = conn.prepareStatement(
+                    "INSERT INTO book_copies (id, book_id, barcode, status, condition, shelf_location) VALUES (?, ?, ?, 'AVAILABLE', 'GOOD', ?)"
+                );
+                insCopy.setString(1, copyId);
+                insCopy.setString(2, bookId);
+                insCopy.setString(3, barcode);
+                insCopy.setString(4, "Shelf-" + (char)('A' + (int)(Math.random() * 8)) + "-" + (1 + (int)(Math.random() * 12)));
+                insCopy.executeUpdate();
+            }
+
+            conn.commit();
+            conn.setAutoCommit(true);
+
+            sendJsonResponse(exchange, 200, "{\"success\": true, \"message\": \"Book added successfully with " + numCopies + " copy(ies)!\", \"bookId\": \"" + bookId + "\"}");
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            sendJsonResponse(exchange, 500, "{\"success\": false, \"error\": \"Database error: " + escape(e.getMessage()) + "\"}");
+        }
+    }
+
+    private void handleGetLoans(HttpExchange exchange) throws IOException {
+        StringBuilder sb = new StringBuilder("[");
+        String sql = "SELECT t.id, t.copy_id, t.user_id, t.issue_date, t.due_date, t.return_date, t.status, " +
+                     "u.name as user_name, u.email as user_email, " +
+                     "b.id as book_id, b.title as book_title " +
+                     "FROM transactions t " +
+                     "JOIN book_copies c ON t.copy_id = c.id " +
+                     "JOIN books b ON c.book_id = b.id " +
+                     "JOIN users u ON t.user_id = u.id " +
+                     "ORDER BY (CASE WHEN t.status = 'ACTIVE' THEN 1 ELSE 2 END), t.issue_date DESC " +
+                     "LIMIT 100";
+
+        LocalDate today = LocalDate.now();
+
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            boolean first = true;
+            while (rs.next()) {
+                if (!first) sb.append(",");
+                first = false;
+
+                String transId = rs.getString("id");
+                String copyId = rs.getString("copy_id");
+                String userId = rs.getString("user_id");
+                String issueDate = rs.getString("issue_date");
+                String dueDateStr = rs.getString("due_date");
+                String returnDate = rs.getString("return_date");
+                String status = rs.getString("status");
+                String userName = rs.getString("user_name");
+                String userEmail = rs.getString("user_email");
+                String bookId = rs.getString("book_id");
+                String bookTitle = rs.getString("book_title");
+
+                boolean isOverdue = false;
+                long daysOverdue = 0;
+                double fine = 0.0;
+
+                if ("ACTIVE".equalsIgnoreCase(status) && dueDateStr != null) {
+                    try {
+                        LocalDate due = LocalDate.parse(dueDateStr.length() > 10 ? dueDateStr.substring(0, 10) : dueDateStr);
+                        if (today.isAfter(due)) {
+                            isOverdue = true;
+                            daysOverdue = ChronoUnit.DAYS.between(due, today);
+                            fine = daysOverdue * 5.0;
+                        }
+                    } catch (Exception ignored) {}
+                }
+
+                sb.append(String.format(
+                    "{\"id\":\"%s\",\"copyId\":\"%s\",\"userId\":\"%s\",\"userName\":\"%s\",\"userEmail\":\"%s\"," +
+                    "\"bookId\":\"%s\",\"bookTitle\":\"%s\",\"issueDate\":\"%s\",\"dueDate\":\"%s\",\"returnDate\":\"%s\"," +
+                    "\"status\":\"%s\",\"isOverdue\":%b,\"daysOverdue\":%d,\"fine\":%.2f}",
+                    escape(transId), escape(copyId), escape(userId), escape(userName), escape(userEmail),
+                    escape(bookId), escape(bookTitle), escape(issueDate), escape(dueDateStr), escape(returnDate != null ? returnDate : ""),
+                    escape(status), isOverdue, daysOverdue, fine
+                ));
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
         sb.append("]");
         sendJsonResponse(exchange, 200, sb.toString());
     }
@@ -128,9 +441,8 @@ public class ApiController implements HttpHandler {
         String userId = data.get("userId");
         String bookId = data.get("bookId");
 
-        CirculationService service = new CirculationService();
-        String result = service.issueBook(userId, bookId);
-        
+        String result = circulationService.issueBook(userId, bookId);
+
         if (result.startsWith("Success")) {
             sendJsonResponse(exchange, 200, "{\"success\": true, \"message\": \"" + escape(result) + "\"}");
         } else {
@@ -143,9 +455,8 @@ public class ApiController implements HttpHandler {
         Map<String, String> data = parseJson(body);
         String copyId = data.get("copyId");
 
-        CirculationService service = new CirculationService();
-        String result = service.returnBook(copyId);
-        
+        String result = circulationService.returnBook(copyId);
+
         if (result.startsWith("Success")) {
             sendJsonResponse(exchange, 200, "{\"success\": true, \"message\": \"" + escape(result) + "\"}");
         } else {
@@ -154,15 +465,38 @@ public class ApiController implements HttpHandler {
     }
 
     private void handleGetMembers(HttpExchange exchange) throws IOException {
-        List<User> users = userDAO.findAll();
         StringBuilder sb = new StringBuilder("[");
-        for (int i = 0; i < users.size(); i++) {
-            User u = users.get(i);
-            String role = u.getRoleId() == 1 ? "Admin" : (u.getRoleId() == 2 ? "Librarian" : "Student");
-            sb.append(String.format("{\"id\":\"%s\",\"name\":\"%s\",\"email\":\"%s\",\"role\":\"%s\"}",
-                u.getId(), escape(u.getName()), escape(u.getEmail()), role));
-            if (i < users.size() - 1) sb.append(",");
+        String sql = "SELECT u.id, u.name, u.email, u.phone, COALESCE(r.role_name, 'STUDENT') as role_name, " +
+                     "COALESCE((SELECT COUNT(*) FROM transactions t WHERE t.user_id = u.id AND t.status = 'ACTIVE'), 0) as active_loans " +
+                     "FROM users u " +
+                     "LEFT JOIN roles r ON u.role_id = r.id " +
+                     "ORDER BY u.id ASC";
+
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            boolean first = true;
+            while (rs.next()) {
+                if (!first) sb.append(",");
+                first = false;
+
+                String id = rs.getString("id");
+                String name = rs.getString("name");
+                String email = rs.getString("email");
+                String role = rs.getString("role_name");
+                int activeLoans = rs.getInt("active_loans");
+
+                sb.append(String.format(
+                    "{\"id\":\"%s\",\"name\":\"%s\",\"email\":\"%s\",\"role\":\"%s\",\"activeLoans\":%d}",
+                    escape(id), escape(name), escape(email), escape(role), activeLoans
+                ));
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
+
         sb.append("]");
         sendJsonResponse(exchange, 200, sb.toString());
     }
@@ -187,14 +521,18 @@ public class ApiController implements HttpHandler {
         Map<String, String> map = new HashMap<>();
         if (json == null || json.trim().isEmpty()) return map;
         String content = json.trim();
-        if (content.startsWith("{")) content = content.substring(1, content.length() - 1);
+        if (content.startsWith("{") && content.endsWith("}")) {
+            content = content.substring(1, content.length() - 1);
+        }
         String[] pairs = content.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
         for (String pair : pairs) {
             String[] kv = pair.split(":(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", 2);
             if (kv.length == 2) {
                 String k = kv[0].trim().replace("\"", "");
                 String v = kv[1].trim();
-                if (v.startsWith("\"") && v.endsWith("\"")) v = v.substring(1, v.length() - 1);
+                if (v.startsWith("\"") && v.endsWith("\"") && v.length() >= 2) {
+                    v = v.substring(1, v.length() - 1);
+                }
                 map.put(k, v);
             }
         }
@@ -203,6 +541,6 @@ public class ApiController implements HttpHandler {
 
     private String escape(String s) {
         if (s == null) return "";
-        return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n");
+        return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r");
     }
 }

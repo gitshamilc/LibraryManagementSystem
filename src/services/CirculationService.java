@@ -1,9 +1,6 @@
 package services;
 
-import dao.BookDAO;
 import dao.TransactionDAO;
-import dao.UserDAO;
-import models.BookCopy;
 import models.Transaction;
 import core.DatabaseManager;
 
@@ -18,96 +15,187 @@ import java.util.UUID;
 public class CirculationService {
     private final TransactionDAO transactionDAO = new TransactionDAO();
 
-    public String issueBook(String userId, String bookId) {
+    public String issueBook(String userIdentifier, String bookIdentifier) {
+        if (userIdentifier == null || userIdentifier.trim().isEmpty()) {
+            return "Error: Member ID or Email is required.";
+        }
+        if (bookIdentifier == null || bookIdentifier.trim().isEmpty()) {
+            return "Error: Book ID or Copy Barcode is required.";
+        }
+
+        userIdentifier = userIdentifier.trim();
+        bookIdentifier = bookIdentifier.trim();
+
         try (Connection conn = DatabaseManager.getConnection()) {
-            
-            // 1. Check if user exists and is eligible
-            PreparedStatement userPs = conn.prepareStatement("SELECT * FROM users WHERE id = ?");
-            userPs.setString(1, userId);
-            if (!userPs.executeQuery().next()) {
-                return "Error: User not found.";
+            // 1. Check user existence and active status
+            String userId = null;
+            String userName = null;
+            PreparedStatement userPs = conn.prepareStatement("SELECT id, name FROM users WHERE id = ? OR LOWER(email) = ? OR LOWER(name) = ?");
+            userPs.setString(1, userIdentifier);
+            userPs.setString(2, userIdentifier.toLowerCase());
+            userPs.setString(3, userIdentifier.toLowerCase());
+            ResultSet userRs = userPs.executeQuery();
+            if (userRs.next()) {
+                userId = userRs.getString("id");
+                userName = userRs.getString("name");
+            } else {
+                return "Error: Member '" + userIdentifier + "' not found in system.";
             }
 
-            // 2. Find an available physical copy of the book
-            PreparedStatement copyPs = conn.prepareStatement("SELECT id FROM book_copies WHERE book_id = ? AND status = 'AVAILABLE' LIMIT 1");
-            copyPs.setString(1, bookId);
-            ResultSet copyRs = copyPs.executeQuery();
-            
-            if (!copyRs.next()) {
-                return "Error: No available physical copies for this book.";
+            // 2. Check active loans count (max 5 books per user limit)
+            PreparedStatement loanCountPs = conn.prepareStatement("SELECT COUNT(*) FROM transactions WHERE user_id = ? AND status = 'ACTIVE'");
+            loanCountPs.setString(1, userId);
+            ResultSet loanCountRs = loanCountPs.executeQuery();
+            if (loanCountRs.next() && loanCountRs.getInt(1) >= 5) {
+                return "Error: Member has reached maximum borrowing limit (5 active loans). Please return a book first.";
             }
-            String copyId = copyRs.getString("id");
 
-            // 3. Create Transaction
+            // 3. Find an available physical copy
+            String copyId = null;
+            String bookTitle = "Book";
+
+            // Check if input is a direct copy ID or barcode
+            PreparedStatement directCopyPs = conn.prepareStatement(
+                "SELECT c.id, b.title FROM book_copies c JOIN books b ON c.book_id = b.id WHERE (c.id = ? OR c.barcode = ?) AND c.status = 'AVAILABLE' LIMIT 1"
+            );
+            directCopyPs.setString(1, bookIdentifier);
+            directCopyPs.setString(2, bookIdentifier);
+            ResultSet directCopyRs = directCopyPs.executeQuery();
+            if (directCopyRs.next()) {
+                copyId = directCopyRs.getString("id");
+                bookTitle = directCopyRs.getString("title");
+            } else {
+                // Check by book ID or ISBN
+                PreparedStatement bookPs = conn.prepareStatement(
+                    "SELECT c.id, b.title FROM books b LEFT JOIN book_copies c ON b.id = c.book_id AND c.status = 'AVAILABLE' WHERE b.id = ? OR b.isbn = ? LIMIT 1"
+                );
+                bookPs.setString(1, bookIdentifier);
+                bookPs.setString(2, bookIdentifier);
+                ResultSet bookRs = bookPs.executeQuery();
+                if (bookRs.next()) {
+                    copyId = bookRs.getString("id");
+                    bookTitle = bookRs.getString("title");
+                    if (copyId == null) {
+                        return "Error: All physical copies of '" + bookTitle + "' are currently checked out.";
+                    }
+                } else {
+                    return "Error: Book '" + bookIdentifier + "' not found in catalog.";
+                }
+            }
+
+            // 4. Create Transaction
             String transactionId = "T" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
             String issueDate = LocalDate.now().toString();
-            String dueDate = LocalDate.now().plusDays(14).toString(); // 14 days loan period
+            String dueDate = LocalDate.now().plusDays(14).toString();
 
             Transaction transaction = new Transaction(transactionId, copyId, userId, issueDate, dueDate, null, "ACTIVE");
             transactionDAO.save(transaction);
 
-            // 4. Update Copy Status
+            // 5. Update Copy Status
             PreparedStatement updateCopy = conn.prepareStatement("UPDATE book_copies SET status = 'ISSUED' WHERE id = ?");
             updateCopy.setString(1, copyId);
             updateCopy.executeUpdate();
 
-            return "Success: Book issued successfully. Due date: " + dueDate;
+            // 6. Audit Log
+            try {
+                PreparedStatement audit = conn.prepareStatement("INSERT INTO audit_logs (user_id, action, details) VALUES (?, 'ISSUE', ?)");
+                audit.setString(1, userId);
+                audit.setString(2, "Issued copy " + copyId + " of '" + bookTitle + "' to " + userName);
+                audit.executeUpdate();
+            } catch (Exception ignored) {}
+
+            return "Success: '" + bookTitle + "' (Copy " + copyId + ") issued to " + userName + ". Due: " + dueDate;
 
         } catch (SQLException e) {
             e.printStackTrace();
-            return "Error: Database failure during issue process.";
+            return "Error: Database failure during issue process: " + e.getMessage();
         }
     }
 
-    public String returnBook(String copyId) {
+    public String returnBook(String identifier) {
+        if (identifier == null || identifier.trim().isEmpty()) {
+            return "Error: Copy ID, Barcode, or Book ID is required.";
+        }
+        identifier = identifier.trim();
+
         try (Connection conn = DatabaseManager.getConnection()) {
-            
-            // 1. Find active transaction for this copy
-            PreparedStatement transPs = conn.prepareStatement("SELECT * FROM transactions WHERE copy_id = ? AND status = 'ACTIVE'");
-            transPs.setString(1, copyId);
+            // Find active transaction by copy ID, barcode, book ID, or transaction ID
+            PreparedStatement transPs = conn.prepareStatement(
+                "SELECT t.id, t.copy_id, t.user_id, t.due_date, b.title as book_title, u.name as user_name " +
+                "FROM transactions t " +
+                "JOIN book_copies c ON t.copy_id = c.id " +
+                "JOIN books b ON c.book_id = b.id " +
+                "JOIN users u ON t.user_id = u.id " +
+                "WHERE (c.id = ? OR c.barcode = ? OR c.book_id = ? OR t.id = ?) AND t.status = 'ACTIVE' " +
+                "LIMIT 1"
+            );
+            transPs.setString(1, identifier);
+            transPs.setString(2, identifier);
+            transPs.setString(3, identifier);
+            transPs.setString(4, identifier);
             ResultSet transRs = transPs.executeQuery();
-            
+
             if (!transRs.next()) {
-                return "Error: No active loan found for this physical copy.";
+                return "Error: No active loan found for '" + identifier + "'. Book is already available or not registered.";
             }
-            
+
             String transactionId = transRs.getString("id");
-            LocalDate dueDate = LocalDate.parse(transRs.getString("due_date"));
+            String copyId = transRs.getString("copy_id");
+            String userId = transRs.getString("user_id");
+            String bookTitle = transRs.getString("book_title");
+            String userName = transRs.getString("user_name");
+            String dueDateStr = transRs.getString("due_date");
+            LocalDate dueDate = LocalDate.parse(dueDateStr.length() > 10 ? dueDateStr.substring(0, 10) : dueDateStr);
             LocalDate returnDate = LocalDate.now();
 
-            // 2. Calculate Fine if overdue (₹5 per day)
+            // Calculate Fine (₹5 per day late)
             double fineAmount = 0.0;
+            long daysOverdue = 0;
             if (returnDate.isAfter(dueDate)) {
-                long daysOverdue = ChronoUnit.DAYS.between(dueDate, returnDate);
-                fineAmount = daysOverdue * 5.0; // configurable fine amount
-                
-                PreparedStatement finePs = conn.prepareStatement("INSERT INTO fines (transaction_id, amount, reason, status) VALUES (?, ?, ?, 'UNPAID')");
+                daysOverdue = ChronoUnit.DAYS.between(dueDate, returnDate);
+                fineAmount = daysOverdue * 5.0;
+
+                PreparedStatement finePs = conn.prepareStatement(
+                    "INSERT INTO fines (transaction_id, amount, reason, status) VALUES (?, ?, ?, 'UNPAID')"
+                );
                 finePs.setString(1, transactionId);
                 finePs.setDouble(2, fineAmount);
                 finePs.setString(3, "Overdue by " + daysOverdue + " days");
                 finePs.executeUpdate();
             }
 
-            // 3. Update Transaction
-            PreparedStatement updateTrans = conn.prepareStatement("UPDATE transactions SET status = 'RETURNED', return_date = ? WHERE id = ?");
+            // Update Transaction
+            PreparedStatement updateTrans = conn.prepareStatement(
+                "UPDATE transactions SET status = 'RETURNED', return_date = ? WHERE id = ?"
+            );
             updateTrans.setString(1, returnDate.toString());
             updateTrans.setString(2, transactionId);
             updateTrans.executeUpdate();
 
-            // 4. Update Copy Status
-            PreparedStatement updateCopy = conn.prepareStatement("UPDATE book_copies SET status = 'AVAILABLE' WHERE id = ?");
+            // Update Copy Status
+            PreparedStatement updateCopy = conn.prepareStatement(
+                "UPDATE book_copies SET status = 'AVAILABLE' WHERE id = ?"
+            );
             updateCopy.setString(1, copyId);
             updateCopy.executeUpdate();
 
+            // Audit log
+            try {
+                PreparedStatement audit = conn.prepareStatement("INSERT INTO audit_logs (user_id, action, details) VALUES (?, 'RETURN', ?)");
+                audit.setString(1, userId);
+                audit.setString(2, "Returned copy " + copyId + " of '" + bookTitle + "' by " + userName);
+                audit.executeUpdate();
+            } catch (Exception ignored) {}
+
             if (fineAmount > 0) {
-                return "Success: Book returned. Note: Late fine of ₹" + fineAmount + " applied.";
+                return "Success: '" + bookTitle + "' returned by " + userName + ". Late fine of ₹" + (int)fineAmount + " applied (" + daysOverdue + " days overdue).";
             } else {
-                return "Success: Book returned on time.";
+                return "Success: '" + bookTitle + "' returned on time by " + userName + ".";
             }
 
         } catch (SQLException e) {
             e.printStackTrace();
-            return "Error: Database failure during return process.";
+            return "Error: Database failure during return process: " + e.getMessage();
         }
     }
 }
