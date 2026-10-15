@@ -279,54 +279,32 @@
                             <button class="btn-secondary quick-btn" onclick="toggleModal('add-book-modal')"><span>➕</span> Add New Book</button>
                             <button class="btn-secondary quick-btn" onclick="toggleModal('add-member-modal')"><span>👤</span> Register Member</button>
                             <button class="btn-secondary quick-btn" onclick="document.getElementById('global-search').focus();"><span>🔍</span> Search Catalog</button>
-                            <button class="btn-secondary quick-btn" onclick="document.getElementById('view-overdue').scrollIntoView({behavior: 'smooth'})"><span>⚠️</span> View Overdue</button>
+                            <button class="btn-secondary quick-btn" onclick="document.querySelector('[data-target=issue]').click()"><span>⚠️</span> View Overdue Loans</button>
                         </div>
                     </div>
 
-                    <!-- Dashboard Split -->
-                    <div class="dashboard-split" style="margin-top: 35px;">
-                        <div class="panel">
-                            <div class="panel-header">
-                                <h3>Borrowing Trends</h3>
+                    <!-- Compact Dashboard Split: Small, Sleek Boxes -->
+                    <div class="dashboard-split" style="margin-top: 25px;">
+                        <div class="panel compact-panel">
+                            <div class="panel-header" style="margin-bottom: 8px;">
+                                <h3 style="font-size: 1.1rem; margin-bottom: 0;">Borrowing Trends</h3>
                                 <span class="badge blue">Live Activity</span>
                             </div>
-                            <canvas id="trendChart" height="200"></canvas>
-                        </div>
-                        <div class="panel">
-                            <div class="panel-header">
-                                <h3>Recent Circulation Activity</h3>
-                                <button class="btn-text" onclick="loadLoansAndActivity()">Refresh</button>
+                            <div class="chart-box" style="position: relative; height: 180px; width: 100%;">
+                                <canvas id="trendChart"></canvas>
                             </div>
-                            <ul class="activity-list" id="activity-list">
-                                <li style="color: var(--text-muted); padding: 20px 0;">Loading activity log...</li>
-                            </ul>
                         </div>
-                    </div>
-
-                    <!-- Overdue Books Section -->
-                    <div id="view-overdue" class="panel no-padding" style="margin-top: 35px;">
-                        <div class="panel-header" style="padding: 24px 24px 15px 24px;">
-                            <div>
-                                <h3>Overdue Loans Monitor</h3>
-                                <p class="subtitle" style="margin-bottom: 0;">Books past their 14-day loan deadline incurring ₹5/day penalty.</p>
+                        <div class="panel compact-panel">
+                            <div class="panel-header" style="margin-bottom: 8px;">
+                                <h3 style="font-size: 1.1rem; margin-bottom: 0;">Recent Activity</h3>
+                                <button class="btn-text" onclick="loadLoansAndActivity()" style="font-size: 0.85rem;">Refresh</button>
                             </div>
-                            <button class="btn-secondary" onclick="loadLoansAndActivity()">Refresh Overdue</button>
+                            <div style="height: 180px; overflow-y: auto; padding-right: 5px;">
+                                <ul class="activity-list" id="activity-list">
+                                    <li style="color: var(--text-muted); padding: 12px 0;">No circulation transactions recorded yet.</li>
+                                </ul>
+                            </div>
                         </div>
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Borrower</th>
-                                    <th>Book Title</th>
-                                    <th>Due Date</th>
-                                    <th>Days Overdue</th>
-                                    <th>Fine Accrued</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="overdue-table-body">
-                                <tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">Loading overdue loans...</td></tr>
-                            </tbody>
-                        </table>
                     </div>
                 </div>
 

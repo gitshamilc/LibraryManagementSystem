@@ -469,11 +469,11 @@ function renderActivityList(loans) {
         }
         
         list.innerHTML += `
-            <li>
-                <span class="badge ${badgeClass}">${badgeLabel}</span>
-                <div class="activity-text">
+            <li style="padding: 8px 0; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 10px;">
+                <span class="badge ${badgeClass}" style="font-size: 0.65rem; padding: 2px 6px;">${badgeLabel}</span>
+                <div class="activity-text" style="font-size: 0.82rem; line-height: 1.3;">
                     <strong>${loan.userName}</strong> ${isReturn ? 'returned' : 'borrowed'} <em>${loan.bookTitle}</em>
-                    <br><small>Issue: ${loan.issueDate} | Due: ${loan.dueDate} ${isOverdue ? '(₹' + loan.fine + ' fine)' : ''}</small>
+                    <br><small style="font-size: 0.72rem; color: var(--text-muted);">Due: ${loan.dueDate} ${isOverdue ? '(₹' + loan.fine + ' fine)' : ''}</small>
                 </div>
             </li>
         `;
@@ -482,6 +482,7 @@ function renderActivityList(loans) {
 
 function renderOverdueTable(loans) {
     const tbody = document.getElementById('overdue-table-body');
+    if (!tbody) return;
     tbody.innerHTML = '';
     
     const overdueList = loans.filter(l => l.status === 'ACTIVE' && l.isOverdue);
