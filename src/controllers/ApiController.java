@@ -76,15 +76,30 @@ public class ApiController implements HttpHandler {
         String email = data.get("email");
         String password = data.get("password");
 
-        User user = userDAO.authenticate(email, password);
-        if (user != null) {
-            String roleName = user.getRoleId() == 1 ? "Administrator" : (user.getRoleId() == 2 ? "Librarian" : "Student");
-            String json = String.format("{\"success\": true, \"userId\": \"%s\", \"name\": \"%s\", \"email\": \"%s\", \"roleId\": %d, \"role\": \"%s\"}", 
-                user.getId(), escape(user.getName()), escape(user.getEmail()), user.getRoleId(), roleName);
-            sendJsonResponse(exchange, 200, json);
-        } else {
-            sendJsonResponse(exchange, 401, "{\"success\": false, \"error\": \"Invalid email/user ID or password\"}");
+        if (email == null || email.trim().isEmpty()) {
+            sendJsonResponse(exchange, 400, "{\"success\": false, \"error\": \"Please enter your email address or User ID.\"}");
+            return;
         }
+        if (password == null || password.trim().isEmpty()) {
+            sendJsonResponse(exchange, 400, "{\"success\": false, \"error\": \"Please enter your password.\"}");
+            return;
+        }
+
+        User user = userDAO.findByIdentifier(email);
+        if (user == null) {
+            sendJsonResponse(exchange, 401, "{\"success\": false, \"error\": \"Invalid user. No account found with this email or User ID.\"}");
+            return;
+        }
+
+        if (!user.getPasswordHash().equals(password)) {
+            sendJsonResponse(exchange, 401, "{\"success\": false, \"error\": \"Incorrect password. Please verify your password and try again.\"}");
+            return;
+        }
+
+        String roleName = user.getRoleId() == 1 ? "Administrator" : (user.getRoleId() == 2 ? "Librarian" : "Student");
+        String json = String.format("{\"success\": true, \"userId\": \"%s\", \"name\": \"%s\", \"email\": \"%s\", \"roleId\": %d, \"role\": \"%s\"}", 
+            user.getId(), escape(user.getName()), escape(user.getEmail()), user.getRoleId(), roleName);
+        sendJsonResponse(exchange, 200, json);
     }
 
     private void handleSignup(HttpExchange exchange) throws IOException {
@@ -94,8 +109,33 @@ public class ApiController implements HttpHandler {
         String email = data.get("email");
         String password = data.get("password");
 
-        if (name == null || email == null || password == null || name.trim().isEmpty() || email.trim().isEmpty() || password.trim().isEmpty()) {
-            sendJsonResponse(exchange, 400, "{\"success\": false, \"error\": \"All fields are required.\"}");
+        // 1. Name validation
+        if (name == null || name.trim().length() < 2) {
+            sendJsonResponse(exchange, 400, "{\"success\": false, \"error\": \"Full name is required (minimum 2 characters).\"}");
+            return;
+        }
+
+        // 2. Email format validation
+        if (email == null || !email.trim().matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) {
+            sendJsonResponse(exchange, 400, "{\"success\": false, \"error\": \"Invalid email format. Please enter a valid email address (e.g., name@example.com).\"}");
+            return;
+        }
+
+        // 3. Email existence check
+        if (userDAO.emailExists(email)) {
+            sendJsonResponse(exchange, 400, "{\"success\": false, \"error\": \"This email is already registered. Please sign in instead.\"}");
+            return;
+        }
+
+        // 4. Password strength rules
+        if (password == null || password.length() < 6) {
+            sendJsonResponse(exchange, 400, "{\"success\": false, \"error\": \"Password must be at least 6 characters long.\"}");
+            return;
+        }
+        boolean hasLetter = password.matches(".*[a-zA-Z].*");
+        boolean hasDigit = password.matches(".*[0-9].*");
+        if (!hasLetter || !hasDigit) {
+            sendJsonResponse(exchange, 400, "{\"success\": false, \"error\": \"Password is not strong enough. It must contain both letters and numbers.\"}");
             return;
         }
 
@@ -107,10 +147,10 @@ public class ApiController implements HttpHandler {
             if (success) {
                 sendJsonResponse(exchange, 200, "{\"success\": true, \"userId\": \"" + newId + "\"}");
             } else {
-                sendJsonResponse(exchange, 400, "{\"success\": false, \"error\": \"Email may already exist.\"}");
+                sendJsonResponse(exchange, 400, "{\"success\": false, \"error\": \"Could not create account. Please try again.\"}");
             }
-        } catch (RuntimeException e) {
-            sendJsonResponse(exchange, 400, "{\"success\": false, \"error\": \"" + escape(e.getMessage()) + "\"}");
+        } catch (Exception e) {
+            sendJsonResponse(exchange, 500, "{\"success\": false, \"error\": \"Registration error: " + escape(e.getMessage()) + "\"}");
         }
     }
 

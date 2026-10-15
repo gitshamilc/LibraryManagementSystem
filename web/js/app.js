@@ -93,6 +93,8 @@ tabSignin.addEventListener('click', () => {
     tabSignup.classList.remove('active');
     formSignin.style.display = 'block';
     formSignup.style.display = 'none';
+    loginError.style.display = 'none';
+    signupError.style.display = 'none';
 });
 
 tabSignup.addEventListener('click', () => {
@@ -100,7 +102,114 @@ tabSignup.addEventListener('click', () => {
     tabSignin.classList.remove('active');
     formSignup.style.display = 'block';
     formSignin.style.display = 'none';
+    loginError.style.display = 'none';
+    signupError.style.display = 'none';
 });
+
+// --- PASSWORD VISIBILITY TOGGLES ---
+const toggleSigninPw = document.getElementById('toggle-signin-password');
+if (toggleSigninPw) {
+    toggleSigninPw.addEventListener('click', () => {
+        const input = document.getElementById('password');
+        const isPw = input.type === 'password';
+        input.type = isPw ? 'text' : 'password';
+        toggleSigninPw.textContent = isPw ? '🙈' : '👁️';
+    });
+}
+
+const toggleSignupPw = document.getElementById('toggle-signup-password');
+if (toggleSignupPw) {
+    toggleSignupPw.addEventListener('click', () => {
+        const input = document.getElementById('reg-password');
+        const isPw = input.type === 'password';
+        input.type = isPw ? 'text' : 'password';
+        toggleSignupPw.textContent = isPw ? '🙈' : '👁️';
+    });
+}
+
+// --- REAL-TIME EMAIL & PASSWORD STRENGTH VALIDATION ---
+const regEmailInput = document.getElementById('reg-email');
+const regEmailHint = document.getElementById('reg-email-hint');
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+if (regEmailInput) {
+    regEmailInput.addEventListener('input', () => {
+        const val = regEmailInput.value.trim();
+        if (val.length > 0 && !emailRegex.test(val)) {
+            regEmailHint.style.display = 'block';
+            regEmailInput.style.borderColor = '#dc2626';
+        } else {
+            regEmailHint.style.display = 'none';
+            regEmailInput.style.borderColor = val.length > 0 ? '#16a34a' : 'var(--border)';
+        }
+    });
+}
+
+const regPasswordInput = document.getElementById('reg-password');
+const strengthFill = document.getElementById('strength-fill');
+const strengthLabel = document.getElementById('strength-label');
+const strengthHint = document.getElementById('strength-hint');
+const ruleLength = document.getElementById('rule-length');
+const ruleChars = document.getElementById('rule-chars');
+
+if (regPasswordInput) {
+    regPasswordInput.addEventListener('input', () => {
+        const val = regPasswordInput.value;
+        const hasLen = val.length >= 6;
+        const hasLetter = /[a-zA-Z]/.test(val);
+        const hasNumber = /[0-9]/.test(val);
+        const hasSpecial = /[^a-zA-Z0-9]/.test(val) || val.length >= 9;
+
+        // Update checklist rules
+        if (hasLen) {
+            ruleLength.classList.add('valid');
+            ruleLength.innerHTML = '<span>✓</span> At least 6 characters';
+        } else {
+            ruleLength.classList.remove('valid');
+            ruleLength.innerHTML = '<span>○</span> At least 6 characters';
+        }
+
+        if (hasLetter && hasNumber) {
+            ruleChars.classList.add('valid');
+            ruleChars.innerHTML = '<span>✓</span> Contains both letters & numbers';
+        } else {
+            ruleChars.classList.remove('valid');
+            ruleChars.innerHTML = '<span>○</span> Contains both letters & numbers';
+        }
+
+        // Calculate score (0 to 3)
+        let score = 0;
+        if (val.length > 0) score = 1;
+        if (hasLen && (hasLetter || hasNumber)) score = 2;
+        if (hasLen && hasLetter && hasNumber) score = hasSpecial ? 3 : 2;
+
+        if (val.length === 0) {
+            strengthFill.style.width = '0%';
+            strengthFill.style.backgroundColor = '#e2e8f0';
+            strengthLabel.textContent = 'Enter password';
+            strengthLabel.style.color = 'var(--text-muted)';
+            strengthHint.textContent = 'Min 6 characters';
+        } else if (score === 1) {
+            strengthFill.style.width = '33%';
+            strengthFill.style.backgroundColor = '#dc2626';
+            strengthLabel.textContent = 'Weak';
+            strengthLabel.style.color = '#dc2626';
+            strengthHint.textContent = 'Needs letters & numbers';
+        } else if (score === 2) {
+            strengthFill.style.width = '66%';
+            strengthFill.style.backgroundColor = '#d97706';
+            strengthLabel.textContent = 'Good';
+            strengthLabel.style.color = '#d97706';
+            strengthHint.textContent = 'Meets requirements';
+        } else if (score === 3) {
+            strengthFill.style.width = '100%';
+            strengthFill.style.backgroundColor = '#16a34a';
+            strengthLabel.textContent = 'Strong';
+            strengthLabel.style.color = '#16a34a';
+            strengthHint.textContent = 'Excellent password';
+        }
+    });
+}
 
 // Modal Toggles
 function toggleModal(modalId) {
@@ -130,6 +239,19 @@ loginForm.addEventListener('submit', async (e) => {
     const btn = document.getElementById('login-submit-btn');
     
     loginError.style.display = 'none';
+
+    // Client-side quick checks
+    if (!email) {
+        loginError.textContent = 'Please enter your email address or User ID.';
+        loginError.style.display = 'block';
+        return;
+    }
+    if (!password) {
+        loginError.textContent = 'Please enter your password.';
+        loginError.style.display = 'block';
+        return;
+    }
+
     btn.disabled = true;
     btn.textContent = 'Verifying credentials...';
     
@@ -159,11 +281,11 @@ loginForm.addEventListener('submit', async (e) => {
             loadLoansAndActivity();
             initChart();
         } else {
-            loginError.textContent = data.error || 'Invalid credentials.';
+            loginError.textContent = data.error || 'Invalid user credentials.';
             loginError.style.display = 'block';
         }
     } catch (err) {
-        loginError.textContent = 'Server connection error. Is the server running?';
+        loginError.textContent = 'Server connection error. Please verify backend service.';
         loginError.style.display = 'block';
         console.error(err);
     } finally {
@@ -180,6 +302,38 @@ signupForm.addEventListener('submit', async (e) => {
     const btn = document.getElementById('signup-submit-btn');
     
     signupError.style.display = 'none';
+
+    // 1. Full name validation
+    if (name.length < 2) {
+        signupError.textContent = 'Please enter your full name (at least 2 characters).';
+        signupError.style.display = 'block';
+        return;
+    }
+
+    // 2. Email format validation
+    if (!emailRegex.test(email)) {
+        signupError.textContent = 'Please enter a valid email address (e.g. name@example.com).';
+        signupError.style.display = 'block';
+        regEmailInput.focus();
+        return;
+    }
+
+    // 3. Password strength validation
+    if (password.length < 6) {
+        signupError.textContent = 'Password is not strong enough. Minimum 6 characters required.';
+        signupError.style.display = 'block';
+        regPasswordInput.focus();
+        return;
+    }
+    const hasLetter = /[a-zA-Z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    if (!hasLetter || !hasNumber) {
+        signupError.textContent = 'Password is not strong enough. It must contain both letters and numbers.';
+        signupError.style.display = 'block';
+        regPasswordInput.focus();
+        return;
+    }
+
     btn.disabled = true;
     btn.textContent = 'Creating account...';
     

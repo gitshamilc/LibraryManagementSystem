@@ -149,12 +149,15 @@
                         <div id="login-error" class="error-msg"></div>
                         <form id="login-form">
                             <div class="input-group">
-                                <label>Email Address or User ID</label>
+                                <label>Email Address or User ID *</label>
                                 <input type="text" id="email" required placeholder="admin@example.com or U1" autocomplete="username">
                             </div>
                             <div class="input-group">
-                                <label>Password</label>
-                                <input type="password" id="password" required placeholder="••••••••" autocomplete="current-password">
+                                <label>Password *</label>
+                                <div class="password-field-wrapper">
+                                    <input type="password" id="password" required placeholder="••••••••" autocomplete="current-password">
+                                    <button type="button" class="password-toggle-btn" id="toggle-signin-password" title="Show/Hide Password">👁️</button>
+                                </div>
                             </div>
                             <button type="submit" class="btn-primary" id="login-submit-btn">Sign In to Dashboard</button>
                             <p class="hint">Default Admin: <strong>admin@example.com</strong> / <strong>admin123</strong></p>
@@ -163,20 +166,39 @@
 
                     <div id="signup-form-wrapper" style="display: none;">
                         <h3>Create Account</h3>
-                        <p class="subtitle">Register a new patron membership.</p>
+                        <p class="subtitle">Register a new library membership.</p>
                         <div id="signup-error" class="error-msg"></div>
                         <form id="signup-form">
                             <div class="input-group">
-                                <label>Full Name</label>
+                                <label>Full Name *</label>
                                 <input type="text" id="reg-name" required placeholder="e.g. John Doe">
                             </div>
                             <div class="input-group">
-                                <label>Email Address</label>
+                                <label>Email Address *</label>
                                 <input type="email" id="reg-email" required placeholder="john@example.com">
+                                <small id="reg-email-hint" style="display:none; color:#dc2626; font-size:0.8rem; margin-top:4px;">Please enter a valid email (e.g. name@example.com)</small>
                             </div>
                             <div class="input-group">
-                                <label>Password</label>
-                                <input type="password" id="reg-password" required placeholder="Create a password">
+                                <label>Password *</label>
+                                <div class="password-field-wrapper">
+                                    <input type="password" id="reg-password" required placeholder="Create a strong password">
+                                    <button type="button" class="password-toggle-btn" id="toggle-signup-password" title="Show/Hide Password">👁️</button>
+                                </div>
+                                
+                                <!-- Password Strength Meter -->
+                                <div class="strength-meter-container">
+                                    <div class="strength-meter-bar">
+                                        <div class="strength-meter-fill" id="strength-fill"></div>
+                                    </div>
+                                    <div class="strength-meter-text">
+                                        <span>Security: <strong id="strength-label">Enter password</strong></span>
+                                        <span id="strength-hint">Min 6 characters</span>
+                                    </div>
+                                    <ul class="strength-rules">
+                                        <li id="rule-length"><span>○</span> At least 6 characters</li>
+                                        <li id="rule-chars"><span>○</span> Contains both letters & numbers</li>
+                                    </ul>
+                                </div>
                             </div>
                             <button type="submit" class="btn-primary" id="signup-submit-btn">Register Account</button>
                         </form>

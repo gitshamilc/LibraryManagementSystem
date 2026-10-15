@@ -35,14 +35,14 @@ public class UserDAO implements GenericDAO<User, String> {
         return null;
     }
 
-    public User authenticate(String identifier, String password) {
-        String query = "SELECT * FROM users WHERE (email = ? OR id = ? OR name = ?) AND password_hash = ?";
+    public User findByIdentifier(String identifier) {
+        if (identifier == null) return null;
+        String query = "SELECT * FROM users WHERE LOWER(email) = ? OR id = ? OR LOWER(name) = ?";
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement ps = conn.prepareStatement(query)) {
-            ps.setString(1, identifier);
-            ps.setString(2, identifier);
-            ps.setString(3, identifier);
-            ps.setString(4, password);
+            ps.setString(1, identifier.toLowerCase().trim());
+            ps.setString(2, identifier.trim());
+            ps.setString(3, identifier.toLowerCase().trim());
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 return new User(
@@ -56,6 +56,28 @@ public class UserDAO implements GenericDAO<User, String> {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+        }
+        return null;
+    }
+
+    public boolean emailExists(String email) {
+        if (email == null) return false;
+        String query = "SELECT COUNT(*) FROM users WHERE LOWER(email) = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement(query)) {
+            ps.setString(1, email.toLowerCase().trim());
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) return rs.getInt(1) > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public User authenticate(String identifier, String password) {
+        User user = findByIdentifier(identifier);
+        if (user != null && user.getPasswordHash().equals(password)) {
+            return user;
         }
         return null;
     }
@@ -90,7 +112,7 @@ public class UserDAO implements GenericDAO<User, String> {
              PreparedStatement ps = conn.prepareStatement(query)) {
             ps.setString(1, entity.getId());
             ps.setString(2, entity.getName());
-            ps.setString(3, entity.getEmail());
+            ps.setString(3, entity.getEmail().toLowerCase().trim());
             if (entity.getPhone() == null) {
                 ps.setNull(4, java.sql.Types.VARCHAR);
             } else {
@@ -101,7 +123,7 @@ public class UserDAO implements GenericDAO<User, String> {
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
-            throw new RuntimeException("DB_ERROR: " + e.getMessage());
+            throw new RuntimeException("Database error: " + e.getMessage());
         }
     }
 
@@ -111,7 +133,7 @@ public class UserDAO implements GenericDAO<User, String> {
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement ps = conn.prepareStatement(query)) {
             ps.setString(1, entity.getName());
-            ps.setString(2, entity.getEmail());
+            ps.setString(2, entity.getEmail().toLowerCase().trim());
             ps.setString(3, entity.getPhone());
             ps.setString(4, entity.getPasswordHash());
             ps.setInt(5, entity.getRoleId());

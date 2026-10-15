@@ -9,6 +9,7 @@ import java.io.File;
 public class DatabaseManager {
     private static String DB_URL = "jdbc:sqlite:db/library.db";
     private static boolean isPostgres = false;
+    private static boolean fallbackToSqlite = false;
 
     static {
         String envDbUrl = System.getenv("DATABASE_URL");
@@ -20,16 +21,29 @@ public class DatabaseManager {
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
             }
-        } else {
-            try {
-                Class.forName("org.sqlite.JDBC");
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-            }
+        }
+        try {
+            Class.forName("org.sqlite.JDBC");
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
         }
     }
 
     public static Connection getConnection() throws SQLException {
+        if (isPostgres && !fallbackToSqlite) {
+            try {
+                return DriverManager.getConnection(DB_URL);
+            } catch (SQLException e) {
+                System.err.println("PostgreSQL connection failed (" + e.getMessage() + "). Gracefully falling back to local database...");
+                fallbackToSqlite = true;
+                isPostgres = false;
+                DB_URL = "jdbc:sqlite:db/library.db";
+                new File("db").mkdirs();
+                initializeDatabase();
+                return DriverManager.getConnection(DB_URL);
+            }
+        }
+        new File("db").mkdirs();
         return DriverManager.getConnection(DB_URL);
     }
 
@@ -74,7 +88,7 @@ public class DatabaseManager {
             
             safeInsert(stmt, "INSERT INTO users (id, name, email, password_hash, role_id) VALUES ('U0', 'Shamil', 'shamil@example.com', 'Shamil@123', 1)");
             safeInsert(stmt, "INSERT INTO users (id, name, email, password_hash, role_id) VALUES ('U1', 'System Admin', 'admin@example.com', 'admin123', 1)");
-            safeInsert(stmt, "INSERT INTO users (id, name, email, password_hash, role_id) VALUES ('U2', 'Test Student', 'student', 'student123', 3)");
+            safeInsert(stmt, "INSERT INTO users (id, name, email, password_hash, role_id) VALUES ('U2', 'Test Student', 'student@example.com', 'student123', 3)");
 
         } catch (SQLException e) {
             e.printStackTrace();
