@@ -43,7 +43,27 @@ function startSlider() {
 }
 startSlider();
 
+function clearAuthForms() {
+    const loginFormEl = document.getElementById('login-form');
+    const signupFormEl = document.getElementById('signup-form');
+    if (loginFormEl) loginFormEl.reset();
+    if (signupFormEl) signupFormEl.reset();
+    
+    const emailEl = document.getElementById('email');
+    const passEl = document.getElementById('password');
+    if (emailEl) emailEl.value = '';
+    if (passEl) passEl.value = '';
+
+    const regNameEl = document.getElementById('reg-name');
+    const regEmailEl = document.getElementById('reg-email');
+    const regPassEl = document.getElementById('reg-password');
+    if (regNameEl) regNameEl.value = '';
+    if (regEmailEl) regEmailEl.value = '';
+    if (regPassEl) regPassEl.value = '';
+}
+
 function goToLogin() {
+    clearAuthForms();
     document.getElementById('landing-screen').style.display = 'none';
     document.getElementById('landing-screen').classList.remove('active');
     document.getElementById('login-screen').classList.add('active');
@@ -95,6 +115,7 @@ tabSignin.addEventListener('click', () => {
     formSignup.style.display = 'none';
     loginError.style.display = 'none';
     signupError.style.display = 'none';
+    clearAuthForms();
 });
 
 tabSignup.addEventListener('click', () => {
@@ -104,6 +125,26 @@ tabSignup.addEventListener('click', () => {
     formSignin.style.display = 'none';
     loginError.style.display = 'none';
     signupError.style.display = 'none';
+    clearAuthForms();
+    if (strengthFill) {
+        strengthFill.style.width = '0%';
+        strengthFill.style.backgroundColor = '#e2e8f0';
+    }
+    if (strengthLabel) {
+        strengthLabel.textContent = 'Enter password';
+        strengthLabel.style.color = 'var(--text-muted)';
+    }
+    if (strengthHint) strengthHint.textContent = 'Min 6 characters';
+    if (ruleLength) {
+        ruleLength.classList.remove('valid');
+        ruleLength.innerHTML = '<span>○</span> At least 6 characters';
+    }
+    if (ruleChars) {
+        ruleChars.classList.remove('valid');
+        ruleChars.innerHTML = '<span>○</span> Contains both letters & numbers';
+    }
+    if (regEmailHint) regEmailHint.style.display = 'none';
+    if (regEmailInput) regEmailInput.style.borderColor = 'var(--border)';
 });
 
 // --- PASSWORD VISIBILITY TOGGLES ---
@@ -347,10 +388,9 @@ signupForm.addEventListener('submit', async (e) => {
         const data = await response.json();
         
         if (data.success) {
-            showToast('Account created successfully! You can now sign in.', 'success');
+            showToast('Account created successfully! Please sign in with your credentials.', 'success');
+            clearAuthForms();
             tabSignin.click();
-            document.getElementById('email').value = email;
-            document.getElementById('password').value = password;
         } else {
             signupError.textContent = data.error || 'Registration failed.';
             signupError.style.display = 'block';
@@ -369,7 +409,7 @@ document.getElementById('logout-btn').addEventListener('click', () => {
     currentUser = null;
     appScreen.classList.remove('active');
     loginScreen.classList.add('active');
-    document.getElementById('password').value = '';
+    clearAuthForms();
     showToast('You have been logged out safely.', 'info');
 });
 
@@ -1002,3 +1042,10 @@ function initChart() {
         console.warn('Chart initialization deferred:', e);
     }
 }
+
+// --- ENSURE CLEAN FORMS ON LOAD (DISABLE AUTOFILL/PREPOPULATE) ---
+window.addEventListener('DOMContentLoaded', clearAuthForms);
+window.addEventListener('load', clearAuthForms);
+setTimeout(clearAuthForms, 50);
+setTimeout(clearAuthForms, 250);
+setTimeout(clearAuthForms, 600);

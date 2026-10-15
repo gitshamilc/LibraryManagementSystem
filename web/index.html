@@ -147,15 +147,15 @@
                         <h3>Welcome back!</h3>
                         <p class="subtitle">Please enter your credentials.</p>
                         <div id="login-error" class="error-msg"></div>
-                        <form id="login-form">
+                        <form id="login-form" autocomplete="off">
                             <div class="input-group">
                                 <label>Email Address or User ID *</label>
-                                <input type="text" id="email" required placeholder="admin@example.com or U1" autocomplete="username">
+                                <input type="text" id="email" required placeholder="admin@example.com or U1" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" readonly onfocus="this.removeAttribute('readonly');">
                             </div>
                             <div class="input-group">
                                 <label>Password *</label>
                                 <div class="password-field-wrapper">
-                                    <input type="password" id="password" required placeholder="••••••••" autocomplete="current-password">
+                                    <input type="password" id="password" required placeholder="••••••••" autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly');">
                                     <button type="button" class="password-toggle-btn" id="toggle-signin-password" title="Show/Hide Password">👁️</button>
                                 </div>
                             </div>
@@ -167,20 +167,20 @@
                         <h3>Create Account</h3>
                         <p class="subtitle">Register a new library membership.</p>
                         <div id="signup-error" class="error-msg"></div>
-                        <form id="signup-form">
+                        <form id="signup-form" autocomplete="off">
                             <div class="input-group">
                                 <label>Full Name *</label>
-                                <input type="text" id="reg-name" required placeholder="e.g. John Doe">
+                                <input type="text" id="reg-name" required placeholder="e.g. John Doe" autocomplete="off">
                             </div>
                             <div class="input-group">
                                 <label>Email Address *</label>
-                                <input type="email" id="reg-email" required placeholder="john@example.com">
+                                <input type="email" id="reg-email" required placeholder="john@example.com" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
                                 <small id="reg-email-hint" style="display:none; color:#dc2626; font-size:0.8rem; margin-top:4px;">Please enter a valid email (e.g. name@example.com)</small>
                             </div>
                             <div class="input-group">
                                 <label>Password *</label>
                                 <div class="password-field-wrapper">
-                                    <input type="password" id="reg-password" required placeholder="Create a strong password">
+                                    <input type="password" id="reg-password" required placeholder="Create a strong password" autocomplete="new-password">
                                     <button type="button" class="password-toggle-btn" id="toggle-signup-password" title="Show/Hide Password">👁️</button>
                                 </div>
                                 
