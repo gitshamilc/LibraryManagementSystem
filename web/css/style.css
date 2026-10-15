@@ -613,4 +613,57 @@ header h1 { font-family: 'Playfair Display', serif; font-size: 1.6rem; color: va
     color: #cbd5e1;
 }
 
+/* --- ROLE SELECTION PILLS (REGISTER FORM) --- */
+.role-selector-pills {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 6px;
+    margin-bottom: 4px;
+}
+.role-pill-option {
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.2s ease;
+    background: #ffffff;
+    user-select: none;
+}
+.role-pill-option:hover {
+    border-color: var(--primary);
+    background: #fafaf9;
+}
+.role-pill-option.active {
+    border-color: var(--primary);
+    background: rgba(194, 147, 82, 0.08);
+    box-shadow: 0 2px 8px rgba(194, 147, 82, 0.15);
+}
+.role-pill-option .pill-icon {
+    font-size: 1.4rem;
+    line-height: 1;
+}
+.role-pill-option .pill-details {
+    display: flex;
+    flex-direction: column;
+}
+.role-pill-option .pill-details strong {
+    font-size: 0.88rem;
+    color: var(--text-main);
+    line-height: 1.2;
+}
+.role-pill-option .pill-details small {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+@media (max-width: 480px) {
+    .role-selector-pills {
+        grid-template-columns: 1fr;
+    }
+}
+
 

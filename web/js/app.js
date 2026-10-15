@@ -60,6 +60,20 @@ function clearAuthForms() {
     if (regNameEl) regNameEl.value = '';
     if (regEmailEl) regEmailEl.value = '';
     if (regPassEl) regPassEl.value = '';
+
+    // Reset role pills to default Student Patron
+    const studentPill = document.getElementById('pill-role-student');
+    const staffPill = document.getElementById('pill-role-staff');
+    if (studentPill) {
+        studentPill.classList.add('active');
+        const radio = studentPill.querySelector('input[type="radio"]');
+        if (radio) radio.checked = true;
+    }
+    if (staffPill) {
+        staffPill.classList.remove('active');
+        const radio = staffPill.querySelector('input[type="radio"]');
+        if (radio) radio.checked = false;
+    }
 }
 
 function goToLogin() {
@@ -167,6 +181,16 @@ if (toggleSignupPw) {
         toggleSignupPw.textContent = isPw ? '🙈' : '👁️';
     });
 }
+
+// --- REGISTRATION ROLE SELECTION PILLS ---
+document.querySelectorAll('.role-pill-option').forEach(pill => {
+    pill.addEventListener('click', () => {
+        document.querySelectorAll('.role-pill-option').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        const radio = pill.querySelector('input[type="radio"]');
+        if (radio) radio.checked = true;
+    });
+});
 
 // --- REAL-TIME EMAIL & PASSWORD STRENGTH VALIDATION ---
 const regEmailInput = document.getElementById('reg-email');
@@ -375,16 +399,20 @@ signupForm.addEventListener('submit', async (e) => {
     btn.textContent = 'Creating account...';
     
     try {
+        const selectedRoleRadio = document.querySelector('input[name="reg-account-role"]:checked');
+        const role = selectedRoleRadio ? selectedRoleRadio.value : 'Student';
+
         const response = await fetch(`${API_BASE}/signup`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, email, password })
+            body: JSON.stringify({ name, email, password, role })
         });
         
         const data = await response.json();
         
         if (data.success) {
-            showToast('Account created successfully! Please sign in with your credentials.', 'success');
+            const roleLabel = role === 'Staff' ? 'Staff / Librarian' : 'Student Patron';
+            showToast(`Account created as ${roleLabel}! Please sign in.`, 'success');
             clearAuthForms();
             tabSignin.click();
         } else {

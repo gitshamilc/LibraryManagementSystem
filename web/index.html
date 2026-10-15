@@ -174,6 +174,27 @@
                         <div id="signup-error" class="error-msg"></div>
                         <form id="signup-form" autocomplete="off">
                             <div class="input-group">
+                                <label>I am registering as: *</label>
+                                <div class="role-selector-pills">
+                                    <label class="role-pill-option active" id="pill-role-student">
+                                        <input type="radio" name="reg-account-role" value="Student" checked style="display:none;">
+                                        <span class="pill-icon">🎓</span>
+                                        <div class="pill-details">
+                                            <strong>Student Patron</strong>
+                                            <small>Bookshelf & Catalog</small>
+                                        </div>
+                                    </label>
+                                    <label class="role-pill-option" id="pill-role-staff">
+                                        <input type="radio" name="reg-account-role" value="Staff" style="display:none;">
+                                        <span class="pill-icon">🛡️</span>
+                                        <div class="pill-details">
+                                            <strong>Staff / Admin</strong>
+                                            <small>Desk & Management</small>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="input-group">
                                 <label>Full Name *</label>
                                 <input type="text" id="reg-name" required placeholder="e.g. John Doe" autocomplete="off">
                             </div>

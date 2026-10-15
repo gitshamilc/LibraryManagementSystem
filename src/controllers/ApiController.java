@@ -96,7 +96,7 @@ public class ApiController implements HttpHandler {
             return;
         }
 
-        String roleName = user.getRoleId() == 1 ? "Administrator" : (user.getRoleId() == 2 ? "Librarian" : "Student");
+        String roleName = user.getRoleId() == 1 ? "Administrator" : (user.getRoleId() == 2 ? "Staff Librarian" : "Student Patron");
         String json = String.format("{\"success\": true, \"userId\": \"%s\", \"name\": \"%s\", \"email\": \"%s\", \"roleId\": %d, \"role\": \"%s\"}", 
             user.getId(), escape(user.getName()), escape(user.getEmail()), user.getRoleId(), roleName);
         sendJsonResponse(exchange, 200, json);
@@ -108,26 +108,35 @@ public class ApiController implements HttpHandler {
         String name = data.get("name");
         String email = data.get("email");
         String password = data.get("password");
+        String roleStr = data.get("role");
 
-        // 1. Name validation
+        // 1. Role determination
+        int roleId = 3; // Default: Student Patron
+        if ("Staff".equalsIgnoreCase(roleStr) || "Librarian".equalsIgnoreCase(roleStr)) {
+            roleId = 2; // Staff Librarian
+        } else if ("Admin".equalsIgnoreCase(roleStr)) {
+            roleId = 1; // Administrator
+        }
+
+        // 2. Name validation
         if (name == null || name.trim().length() < 2) {
             sendJsonResponse(exchange, 400, "{\"success\": false, \"error\": \"Full name is required (minimum 2 characters).\"}");
             return;
         }
 
-        // 2. Email format validation
+        // 3. Email format validation
         if (email == null || !email.trim().matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) {
             sendJsonResponse(exchange, 400, "{\"success\": false, \"error\": \"Invalid email format. Please enter a valid email address (e.g., name@example.com).\"}");
             return;
         }
 
-        // 3. Email existence check
+        // 4. Email existence check
         if (userDAO.emailExists(email)) {
             sendJsonResponse(exchange, 400, "{\"success\": false, \"error\": \"This email is already registered. Please sign in instead.\"}");
             return;
         }
 
-        // 4. Password strength rules
+        // 5. Password strength rules
         if (password == null || password.length() < 6) {
             sendJsonResponse(exchange, 400, "{\"success\": false, \"error\": \"Password must be at least 6 characters long.\"}");
             return;
@@ -139,13 +148,14 @@ public class ApiController implements HttpHandler {
             return;
         }
 
-        String newId = "U" + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
-        User newUser = new User(newId, name.trim(), email.trim().toLowerCase(), null, password, 3); // Role 3 = Student/User
+        String prefix = roleId == 1 ? "AD" : (roleId == 2 ? "ST" : "U");
+        String newId = prefix + UUID.randomUUID().toString().substring(0, 5).toUpperCase();
+        User newUser = new User(newId, name.trim(), email.trim().toLowerCase(), null, password, roleId);
 
         try {
             boolean success = userDAO.save(newUser);
             if (success) {
-                sendJsonResponse(exchange, 200, "{\"success\": true, \"userId\": \"" + newId + "\"}");
+                sendJsonResponse(exchange, 200, "{\"success\": true, \"userId\": \"" + newId + "\", \"roleId\": " + roleId + "}");
             } else {
                 sendJsonResponse(exchange, 400, "{\"success\": false, \"error\": \"Could not create account. Please try again.\"}");
             }
