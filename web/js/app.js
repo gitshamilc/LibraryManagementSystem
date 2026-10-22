@@ -462,7 +462,7 @@ signupForm.addEventListener('submit', async (e) => {
             return;
         }
         if (adminPin !== '4321') {
-            signupError.textContent = 'Wrong PIN code! Please enter the correct Admin Security PIN.';
+            signupError.textContent = 'Wrong pincode! Please enter the correct PIN.';
             signupError.style.display = 'block';
             const pinInput = document.getElementById('reg-admin-pin');
             if (pinInput) {
