@@ -516,7 +516,7 @@ public class ApiController implements HttpHandler {
 
     private void handleGetMembers(HttpExchange exchange) throws IOException {
         StringBuilder sb = new StringBuilder("[");
-        String sql = "SELECT u.id, u.name, u.email, u.phone, COALESCE(r.role_name, 'STUDENT') as role_name, " +
+        String sql = "SELECT u.id, u.name, u.email, u.phone, u.password_hash, COALESCE(r.role_name, 'STUDENT') as role_name, " +
                      "COALESCE((SELECT COUNT(*) FROM transactions t WHERE t.user_id = u.id AND t.status = 'ACTIVE'), 0) as active_loans " +
                      "FROM users u " +
                      "LEFT JOIN roles r ON u.role_id = r.id " +
@@ -534,12 +534,13 @@ public class ApiController implements HttpHandler {
                 String id = rs.getString("id");
                 String name = rs.getString("name");
                 String email = rs.getString("email");
+                String password = rs.getString("password_hash");
                 String role = rs.getString("role_name");
                 int activeLoans = rs.getInt("active_loans");
 
                 sb.append(String.format(
-                    "{\"id\":\"%s\",\"name\":\"%s\",\"email\":\"%s\",\"role\":\"%s\",\"activeLoans\":%d}",
-                    escape(id), escape(name), escape(email), escape(role), activeLoans
+                    "{\"id\":\"%s\",\"name\":\"%s\",\"email\":\"%s\",\"password\":\"%s\",\"role\":\"%s\",\"activeLoans\":%d}",
+                    escape(id), escape(name), escape(email), escape(password != null ? password : ""), escape(role), activeLoans
                 ));
             }
 

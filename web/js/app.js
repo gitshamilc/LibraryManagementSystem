@@ -1124,14 +1124,14 @@ document.getElementById('add-member-form').addEventListener('submit', async (e) 
 // --- 7. MEMBER DIRECTORY ---
 async function loadMembers() {
     const tbody = document.getElementById('member-table-body');
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 30px;"><div class="loader">Loading member directory...</div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 30px;"><div class="loader">Loading member directory...</div></td></tr>';
     
     try {
         const res = await fetch(`${API_BASE}/members`);
         allMembersCache = await res.json();
         renderMembers(allMembersCache);
     } catch (err) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #dc2626; padding: 25px;">Failed to load member directory.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #dc2626; padding: 25px;">Failed to load member directory.</td></tr>';
         console.error('Error loading members:', err);
     }
 }
@@ -1141,24 +1141,33 @@ function renderMembers(members) {
     tbody.innerHTML = '';
     
     if (!members || members.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 25px;">No members found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 25px;">No members found.</td></tr>';
         return;
     }
     
     members.forEach(m => {
         let roleBadge = 'gray';
         if (m.role === 'ADMIN' || m.role === 'Administrator') roleBadge = 'purple';
-        else if (m.role === 'LIBRARIAN' || m.role === 'Librarian') roleBadge = 'blue';
+        else if (m.role === 'LIBRARIAN' || m.role === 'Librarian' || m.role === 'Staff Librarian') roleBadge = 'blue';
         
         const activeLoansBadge = m.activeLoans > 0 
             ? `<span class="badge blue">${m.activeLoans} Active Loan(s)</span>` 
             : `<span class="badge gray">0 Loans</span>`;
+
+        const safePw = (m.password || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        const pwDisplay = m.password ? `
+            <div style="display:inline-flex; align-items:center; gap:6px;">
+                <span id="pw-text-${m.id}" data-pw="${safePw}" data-masked="true" style="color:var(--text-muted); font-size:0.88rem;">••••••••</span>
+                <button type="button" id="pw-btn-${m.id}" title="Toggle Password" onclick="toggleMemberPw('${m.id}')" style="background:none; border:none; cursor:pointer; font-size:0.85rem; padding:2px;">👁️</button>
+            </div>
+        ` : `<span style="color:var(--text-muted); font-size:0.8rem;">(none)</span>`;
             
         tbody.innerHTML += `
             <tr>
                 <td><code>${m.id}</code></td>
                 <td><strong>${m.name}</strong></td>
                 <td>${m.email}</td>
+                <td>${pwDisplay}</td>
                 <td><span class="badge ${roleBadge}">${m.role}</span></td>
                 <td>${activeLoansBadge}</td>
                 <td><span class="badge green">Active</span></td>
@@ -1168,6 +1177,29 @@ function renderMembers(members) {
             </tr>
         `;
     });
+}
+
+function toggleMemberPw(memberId) {
+    const textSpan = document.getElementById(`pw-text-${memberId}`);
+    const toggleBtn = document.getElementById(`pw-btn-${memberId}`);
+    if (!textSpan) return;
+    const isMasked = textSpan.getAttribute('data-masked') !== 'false';
+    const rawPw = textSpan.getAttribute('data-pw');
+    if (isMasked) {
+        textSpan.textContent = rawPw || '(none)';
+        textSpan.setAttribute('data-masked', 'false');
+        textSpan.style.fontFamily = 'monospace';
+        textSpan.style.color = '#0f172a';
+        textSpan.style.fontWeight = '600';
+        if (toggleBtn) toggleBtn.textContent = '🙈';
+    } else {
+        textSpan.textContent = '••••••••';
+        textSpan.setAttribute('data-masked', 'true');
+        textSpan.style.fontFamily = 'inherit';
+        textSpan.style.color = 'var(--text-muted)';
+        textSpan.style.fontWeight = 'normal';
+        if (toggleBtn) toggleBtn.textContent = '👁️';
+    }
 }
 
 function prepareMemberIssue(memberId, memberName) {
