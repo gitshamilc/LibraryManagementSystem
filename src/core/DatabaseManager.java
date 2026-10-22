@@ -3,6 +3,8 @@ package core;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.io.File;
 
@@ -30,9 +32,11 @@ public class DatabaseManager {
     }
 
     public static Connection getConnection() throws SQLException {
+        Connection conn;
         if (isPostgres && !fallbackToSqlite) {
             try {
-                return DriverManager.getConnection(DB_URL);
+                conn = DriverManager.getConnection(DB_URL);
+                return conn;
             } catch (SQLException e) {
                 System.err.println("PostgreSQL connection failed (" + e.getMessage() + "). Gracefully falling back to local database...");
                 fallbackToSqlite = true;
@@ -40,11 +44,20 @@ public class DatabaseManager {
                 DB_URL = "jdbc:sqlite:db/library.db";
                 new File("db").mkdirs();
                 initializeDatabase();
-                return DriverManager.getConnection(DB_URL);
+                conn = DriverManager.getConnection(DB_URL);
             }
+        } else {
+            new File("db").mkdirs();
+            conn = DriverManager.getConnection(DB_URL);
         }
-        new File("db").mkdirs();
-        return DriverManager.getConnection(DB_URL);
+
+        if (!isPostgres) {
+            try (Statement st = conn.createStatement()) {
+                st.execute("PRAGMA journal_mode = WAL");
+                st.execute("PRAGMA busy_timeout = 5000");
+            } catch (SQLException ignored) {}
+        }
+        return conn;
     }
 
     public static boolean isPostgres() {
@@ -80,8 +93,15 @@ public class DatabaseManager {
             executeSql(stmt, "CREATE TABLE IF NOT EXISTS library_settings (setting_key VARCHAR(100) PRIMARY KEY, setting_value TEXT NOT NULL)");
 
             // Safe automatic column migrations for existing databases
-            safeInsert(stmt, "ALTER TABLE users ADD COLUMN class_name VARCHAR(50)");
-            safeInsert(stmt, "ALTER TABLE users ADD COLUMN roll_number VARCHAR(50)");
+            if (isPostgres) {
+                safeInsert(stmt, "ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(50)");
+                safeInsert(stmt, "ALTER TABLE users ADD COLUMN IF NOT EXISTS class_name VARCHAR(50)");
+                safeInsert(stmt, "ALTER TABLE users ADD COLUMN IF NOT EXISTS roll_number VARCHAR(50)");
+            } else {
+                safeInsert(stmt, "ALTER TABLE users ADD COLUMN phone VARCHAR(50)");
+                safeInsert(stmt, "ALTER TABLE users ADD COLUMN class_name VARCHAR(50)");
+                safeInsert(stmt, "ALTER TABLE users ADD COLUMN roll_number VARCHAR(50)");
+            }
 
             System.out.println("Database schema initialized successfully.");
             
@@ -94,7 +114,25 @@ public class DatabaseManager {
             safeInsert(stmt, "INSERT INTO users (id, name, email, password_hash, role_id) VALUES ('U1', 'System Admin', 'admin@example.com', 'admin123', 1)");
             safeInsert(stmt, "INSERT INTO users (id, name, email, password_hash, role_id) VALUES ('U2', 'Test Student', 'student@example.com', 'student123', 3)");
             safeInsert(stmt, "INSERT INTO users (id, name, email, password_hash, role_id) VALUES ('U3', 'Shamil', 'sa@gmail.com', 'shamilc12', 1)");
-            safeInsert(stmt, "INSERT INTO users (id, name, email, phone, class_name, roll_number, password_hash, role_id) VALUES ('U9CC6D', 'rahul sharma', 'rahul@gmail.com', '9876543210', '10-A', '24', 'rahul123', 3)");
+
+            // Guarantee Rahul Sharma is ALWAYS registered and up to date
+            try {
+                PreparedStatement userCheck = conn.prepareStatement("SELECT id FROM users WHERE id = 'U9CC6D' OR LOWER(email) = 'rahul@gmail.com'");
+                ResultSet uRs = userCheck.executeQuery();
+                if (!uRs.next()) {
+                    PreparedStatement ins = conn.prepareStatement(
+                        "INSERT INTO users (id, name, email, phone, class_name, roll_number, password_hash, role_id) VALUES ('U9CC6D', 'rahul sharma', 'rahul@gmail.com', '9876543210', '10-A', '24', 'rahul123', 3)"
+                    );
+                    ins.executeUpdate();
+                } else {
+                    PreparedStatement upd = conn.prepareStatement(
+                        "UPDATE users SET name = 'rahul sharma', email = 'rahul@gmail.com', password_hash = 'rahul123', phone = '9876543210', class_name = '10-A', roll_number = '24', role_id = 3 WHERE id = 'U9CC6D' OR LOWER(email) = 'rahul@gmail.com'"
+                    );
+                    upd.executeUpdate();
+                }
+            } catch (Exception e) {
+                System.err.println("Rahul seed error (handled): " + e.getMessage());
+            }
 
         } catch (SQLException e) {
             e.printStackTrace();

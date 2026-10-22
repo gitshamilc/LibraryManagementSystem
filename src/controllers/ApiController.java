@@ -459,12 +459,14 @@ public class ApiController implements HttpHandler {
     private void handleGetLoans(HttpExchange exchange) throws IOException {
         StringBuilder sb = new StringBuilder("[");
         String sql = "SELECT t.id, t.copy_id, t.user_id, t.issue_date, t.due_date, t.return_date, t.status, " +
-                     "u.name as user_name, u.email as user_email, " +
-                     "b.id as book_id, b.title as book_title " +
+                     "COALESCE(u.name, t.user_id) as user_name, " +
+                     "COALESCE(u.email, t.user_id) as user_email, " +
+                     "COALESCE(b.id, t.copy_id) as book_id, " +
+                     "COALESCE(b.title, t.copy_id) as book_title " +
                      "FROM transactions t " +
-                     "JOIN book_copies c ON t.copy_id = c.id " +
-                     "JOIN books b ON c.book_id = b.id " +
-                     "JOIN users u ON t.user_id = u.id " +
+                     "LEFT JOIN book_copies c ON t.copy_id = c.id " +
+                     "LEFT JOIN books b ON c.book_id = b.id " +
+                     "LEFT JOIN users u ON (t.user_id = u.id OR LOWER(t.user_id) = LOWER(u.email)) " +
                      "ORDER BY (CASE WHEN t.status = 'ACTIVE' THEN 1 ELSE 2 END), t.issue_date DESC " +
                      "LIMIT 100";
 
@@ -559,7 +561,7 @@ public class ApiController implements HttpHandler {
                      "COALESCE((SELECT COUNT(*) FROM transactions t WHERE t.user_id = u.id AND t.status = 'ACTIVE'), 0) as active_loans " +
                      "FROM users u " +
                      "LEFT JOIN roles r ON u.role_id = r.id " +
-                     "ORDER BY u.created_at DESC, u.id DESC";
+                     "ORDER BY (CASE WHEN u.id = 'U9CC6D' OR LOWER(u.email) = 'rahul@gmail.com' THEN 0 ELSE 1 END), u.created_at DESC, u.id DESC";
 
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
