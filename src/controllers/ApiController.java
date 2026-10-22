@@ -112,6 +112,7 @@ public class ApiController implements HttpHandler {
         String phone = data.get("phone");
         String className = data.get("className");
         String rollNumber = data.get("rollNumber");
+        String adminPin = data.get("adminPin");
 
         // 1. Role determination
         int roleId = 3; // Default: Student Patron
@@ -155,7 +156,15 @@ public class ApiController implements HttpHandler {
             }
         }
 
-        // 6. Password strength rules
+        // 6. Staff security PIN validation (Passcode: 4321)
+        if (roleId == 1 || roleId == 2) {
+            if (adminPin == null || !"4321".equals(adminPin.trim())) {
+                sendJsonResponse(exchange, 403, "{\"success\": false, \"error\": \"Invalid Admin PIN. Only authorized personnel with passcode 4321 can register as staff.\"}");
+                return;
+            }
+        }
+
+        // 7. Password strength rules
         if (password == null || password.length() < 6) {
             sendJsonResponse(exchange, 400, "{\"success\": false, \"error\": \"Password must be at least 6 characters long.\"}");
             return;
@@ -196,6 +205,7 @@ public class ApiController implements HttpHandler {
         String phone = data.get("phone");
         String className = data.get("className");
         String rollNumber = data.get("rollNumber");
+        String adminPin = data.get("adminPin");
 
         if (name == null || email == null || password == null) {
             sendJsonResponse(exchange, 400, "{\"success\": false, \"error\": \"Name, email, and password are required.\"}");

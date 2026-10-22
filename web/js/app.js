@@ -60,15 +60,20 @@ function clearAuthForms() {
     const regPhoneEl = document.getElementById('reg-phone');
     const regClassEl = document.getElementById('reg-class');
     const regRollEl = document.getElementById('reg-roll');
+    const regAdminPinEl = document.getElementById('reg-admin-pin');
     if (regNameEl) regNameEl.value = '';
     if (regEmailEl) regEmailEl.value = '';
     if (regPassEl) regPassEl.value = '';
     if (regPhoneEl) regPhoneEl.value = '';
     if (regClassEl) regClassEl.value = '';
     if (regRollEl) regRollEl.value = '';
+    if (regAdminPinEl) regAdminPinEl.value = '';
 
     const studentAcademicFields = document.getElementById('student-academic-fields');
     if (studentAcademicFields) studentAcademicFields.style.display = 'block';
+
+    const staffSecurityFields = document.getElementById('staff-security-fields');
+    if (staffSecurityFields) staffSecurityFields.style.display = 'none';
 
     // Reset role pills to default Student Patron
     const studentPill = document.getElementById('pill-role-student');
@@ -195,6 +200,18 @@ if (toggleSignupPw) {
     });
 }
 
+const toggleAdminPin = document.getElementById('toggle-admin-pin');
+if (toggleAdminPin) {
+    toggleAdminPin.addEventListener('click', () => {
+        const input = document.getElementById('reg-admin-pin');
+        if (input) {
+            const isPw = input.type === 'password';
+            input.type = isPw ? 'text' : 'password';
+            toggleAdminPin.textContent = isPw ? '🙈' : '👁️';
+        }
+    });
+}
+
 // --- REGISTRATION ROLE SELECTION PILLS ---
 document.querySelectorAll('.role-pill-option').forEach(pill => {
     pill.addEventListener('click', () => {
@@ -204,8 +221,12 @@ document.querySelectorAll('.role-pill-option').forEach(pill => {
         if (radio) {
             radio.checked = true;
             const studentFields = document.getElementById('student-academic-fields');
+            const staffFields = document.getElementById('staff-security-fields');
             if (studentFields) {
                 studentFields.style.display = radio.value === 'Student' ? 'block' : 'none';
+            }
+            if (staffFields) {
+                staffFields.style.display = radio.value === 'Staff' ? 'block' : 'none';
             }
         }
     });
@@ -382,6 +403,7 @@ signupForm.addEventListener('submit', async (e) => {
     const phone = document.getElementById('reg-phone') ? document.getElementById('reg-phone').value.trim() : '';
     const className = document.getElementById('reg-class') ? document.getElementById('reg-class').value.trim() : '';
     const rollNumber = document.getElementById('reg-roll') ? document.getElementById('reg-roll').value.trim() : '';
+    const adminPin = document.getElementById('reg-admin-pin') ? document.getElementById('reg-admin-pin').value.trim() : '';
     const btn = document.getElementById('signup-submit-btn');
     
     signupError.style.display = 'none';
@@ -430,7 +452,28 @@ signupForm.addEventListener('submit', async (e) => {
         }
     }
 
-    // 5. Password strength validation
+    // 5. Staff-specific validations (Admin Security PIN)
+    if (role === 'Staff') {
+        if (!adminPin) {
+            signupError.textContent = 'Please enter the Admin Security PIN to register as Staff.';
+            signupError.style.display = 'block';
+            const pinInput = document.getElementById('reg-admin-pin');
+            if (pinInput) pinInput.focus();
+            return;
+        }
+        if (adminPin !== '4321') {
+            signupError.textContent = 'Invalid Admin PIN! Only authorized personnel with passcode 4321 can register as Staff.';
+            signupError.style.display = 'block';
+            const pinInput = document.getElementById('reg-admin-pin');
+            if (pinInput) {
+                pinInput.focus();
+                pinInput.select();
+            }
+            return;
+        }
+    }
+
+    // 6. Password strength validation
     if (password.length < 6) {
         signupError.textContent = 'Password is not strong enough. Minimum 6 characters required.';
         signupError.style.display = 'block';
@@ -453,7 +496,7 @@ signupForm.addEventListener('submit', async (e) => {
         const response = await fetch(`${API_BASE}/signup`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, email, password, role, phone, className, rollNumber })
+            body: JSON.stringify({ name, email, password, role, phone, className, rollNumber, adminPin })
         });
         
         const data = await response.json();
