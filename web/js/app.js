@@ -139,6 +139,8 @@ tabSignin.addEventListener('click', () => {
     loginError.style.display = 'none';
     signupError.style.display = 'none';
     clearAuthForms();
+    const ls = document.getElementById('login-screen');
+    if (ls) ls.scrollTop = 0;
 });
 
 tabSignup.addEventListener('click', () => {
@@ -149,6 +151,8 @@ tabSignup.addEventListener('click', () => {
     loginError.style.display = 'none';
     signupError.style.display = 'none';
     clearAuthForms();
+    const ls = document.getElementById('login-screen');
+    if (ls) ls.scrollTop = 0;
     if (strengthFill) {
         strengthFill.style.width = '0%';
         strengthFill.style.backgroundColor = '#e2e8f0';
