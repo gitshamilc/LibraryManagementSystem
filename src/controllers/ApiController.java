@@ -559,7 +559,7 @@ public class ApiController implements HttpHandler {
                      "COALESCE((SELECT COUNT(*) FROM transactions t WHERE t.user_id = u.id AND t.status = 'ACTIVE'), 0) as active_loans " +
                      "FROM users u " +
                      "LEFT JOIN roles r ON u.role_id = r.id " +
-                     "ORDER BY u.id ASC";
+                     "ORDER BY u.created_at DESC, u.id DESC";
 
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);

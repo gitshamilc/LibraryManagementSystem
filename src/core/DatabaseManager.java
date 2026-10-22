@@ -94,6 +94,7 @@ public class DatabaseManager {
             safeInsert(stmt, "INSERT INTO users (id, name, email, password_hash, role_id) VALUES ('U1', 'System Admin', 'admin@example.com', 'admin123', 1)");
             safeInsert(stmt, "INSERT INTO users (id, name, email, password_hash, role_id) VALUES ('U2', 'Test Student', 'student@example.com', 'student123', 3)");
             safeInsert(stmt, "INSERT INTO users (id, name, email, password_hash, role_id) VALUES ('U3', 'Shamil', 'sa@gmail.com', 'shamilc12', 1)");
+            safeInsert(stmt, "INSERT INTO users (id, name, email, phone, class_name, roll_number, password_hash, role_id) VALUES ('U9CC6D', 'rahul sharma', 'rahul@gmail.com', '9876543210', '10-A', '24', 'rahul123', 3)");
 
         } catch (SQLException e) {
             e.printStackTrace();
