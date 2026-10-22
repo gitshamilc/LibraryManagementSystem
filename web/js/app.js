@@ -1,5 +1,5 @@
 // ==========================================
-// ATHENA Library Management System - Master JS
+// SA Library Management System - Master JS
 // ==========================================
 
 const API_BASE = window.location.origin + '/api';
