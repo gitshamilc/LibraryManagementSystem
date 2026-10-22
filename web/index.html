@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SA Library | Master Library Management System</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=2.6">
+    <link rel="stylesheet" href="css/style.css?v=2.7">
     <!-- Chart.js for Analytics -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Confetti for Returns -->
@@ -291,7 +291,7 @@
                 <h1 id="page-title">Dashboard</h1>
                 <div class="header-actions">
                     <input type="search" placeholder="Search catalog by title, author, or ID..." class="search-bar" id="global-search">
-                    <button class="btn-icon" title="View Overdue Notifications" onclick="document.querySelector('[data-target=dashboard]').click(); document.getElementById('view-overdue').scrollIntoView({behavior: 'smooth'});">🔔</button>
+                    <button class="btn-icon" title="Notifications" onclick="handleNotificationClick()">🔔</button>
                     <button class="btn-icon mobile-logout-btn" title="Sign Out" onclick="document.getElementById('logout-btn').click();" style="display: none;">🚪</button>
                 </div>
             </header>
@@ -687,7 +687,7 @@
                 <p id="modal-book-desc" style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 20px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--border);"></p>
                 <div style="display: flex; gap: 10px;">
                     <button class="btn-secondary" style="flex: 1;" onclick="toggleModal('book-details-modal')">Close</button>
-                    <button class="btn-primary" style="flex: 1;" id="modal-issue-book-btn">Issue This Book</button>
+                    <button class="btn-primary admin-only-btn" style="flex: 1;" id="modal-issue-book-btn">Issue This Book</button>
                 </div>
             </div>
         </div>
@@ -696,6 +696,6 @@
     <!-- TOAST NOTIFICATION CONTAINER -->
     <div id="toast-container" style="position: fixed; bottom: 25px; right: 25px; z-index: 99999; display: flex; flex-direction: column; gap: 10px;"></div>
 
-    <script src="js/app.js?v=2.6"></script>
+    <script src="js/app.js?v=2.7"></script>
 </body>
 </html>

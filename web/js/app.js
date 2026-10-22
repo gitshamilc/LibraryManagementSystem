@@ -537,13 +537,18 @@ navItems.forEach(item => {
     item.addEventListener('click', (e) => {
         e.preventDefault();
         
+        const targetView = item.getAttribute('data-target');
+        if (!isStaffUser() && (targetView === 'issue' || targetView === 'dashboard' || targetView === 'members')) {
+            showToast('Access restricted: Staff circulation & management desk.', 'warning');
+            return;
+        }
+
         navItems.forEach(n => n.classList.remove('active'));
         item.classList.add('active');
         
         const rawTitle = item.textContent.trim();
         pageTitle.textContent = rawTitle.replace(/[^\w\s&]/gi, '').trim();
         
-        const targetView = item.getAttribute('data-target');
         views.forEach(v => v.classList.remove('active'));
         const targetElem = document.getElementById(`view-${targetView}`);
         if (targetElem) targetElem.classList.add('active');
@@ -560,9 +565,36 @@ navItems.forEach(item => {
     });
 });
 
+function isStaffUser() {
+    return currentUser && (currentUser.roleId === 1 || currentUser.roleId === 2 || 
+           (currentUser.role && (
+               currentUser.role.toLowerCase().includes('admin') || 
+               currentUser.role.toLowerCase().includes('librarian') || 
+               currentUser.role.toLowerCase().includes('staff')
+           )));
+}
+
+function handleNotificationClick() {
+    if (isStaffUser()) {
+        switchView('dashboard');
+        const overdueEl = document.getElementById('view-overdue');
+        if (overdueEl) overdueEl.scrollIntoView({ behavior: 'smooth' });
+    } else {
+        switchView('student-portal');
+        const loansEl = document.getElementById('student-loans-tbody');
+        if (loansEl) loansEl.scrollIntoView({ behavior: 'smooth' });
+    }
+}
+window.handleNotificationClick = handleNotificationClick;
+
 function switchView(target) {
+    // Strictly protect staff circulation/admin views from students
+    if (!isStaffUser() && (target === 'issue' || target === 'dashboard' || target === 'members')) {
+        target = 'student-portal';
+    }
+
     const navBtn = document.querySelector(`.nav-item[data-target="${target}"]`);
-    if (navBtn) {
+    if (navBtn && navBtn.style.display !== 'none') {
         navBtn.click();
     } else {
         views.forEach(v => v.classList.remove('active'));
@@ -570,6 +602,7 @@ function switchView(target) {
         if (targetElem) targetElem.classList.add('active');
         if (target === 'student-portal') loadStudentPortalData();
         else if (target === 'dashboard') loadDashboardStats();
+        else if (target === 'catalog') loadCatalog();
     }
 }
 
@@ -955,6 +988,8 @@ function renderBooks(books) {
         return;
     }
     
+    const isStaff = isStaffUser();
+
     books.forEach(book => {
         window.booksById[book.id] = book;
         const card = document.createElement('div');
@@ -965,6 +1000,10 @@ function renderBooks(books) {
         const availClass = isAvailable ? 'in-stock' : 'out-of-stock';
         const availText = isAvailable ? `🟢 ${book.availableCopies}/${book.totalCopies} Available` : `🔴 All Loaned Out`;
         
+        const actionBtn = isStaff 
+            ? `<button class="btn-primary admin-only-btn" style="padding: 8px 16px; width: auto; font-size: 0.9rem;" onclick="prepareIssue('${book.id}')">Issue Book</button>`
+            : `<button class="btn-primary" style="padding: 8px 16px; width: auto; font-size: 0.9rem;" onclick="showBookDetailsModal('${book.id}')">View Details</button>`;
+
         card.innerHTML = `
             <div class="book-cover" style="${coverStyle}">
                 <div class="book-badge">${book.id}</div>
@@ -981,8 +1020,7 @@ function renderBooks(books) {
                 </div>
                 <div class="book-actions">
                     <button class="btn-text" onclick="showBookDetailsModal('${book.id}')">Details</button>
-                    <button class="btn-primary" style="padding: 8px 16px; width: auto; font-size: 0.9rem;" 
-                        onclick="prepareIssue('${book.id}')">Issue Book</button>
+                    ${actionBtn}
                 </div>
             </div>
         `;
@@ -991,6 +1029,11 @@ function renderBooks(books) {
 }
 
 function prepareIssue(bookId) {
+    if (!isStaffUser()) {
+        showToast('Only library staff can issue books. Please visit the circulation desk.', 'info');
+        showBookDetailsModal(bookId);
+        return;
+    }
     const book = (window.booksById && window.booksById[bookId]) || allBooksCache.find(b => b.id === bookId);
     const bookTitle = book ? book.title : bookId;
     switchView('issue');
@@ -1021,10 +1064,13 @@ function showBookDetailsModal(bookId) {
     availElem.textContent = isAvail ? `${book.availableCopies} of ${book.totalCopies} Copies Available` : 'All Copies Currently Checked Out';
     
     const issueBtn = document.getElementById('modal-issue-book-btn');
-    issueBtn.onclick = () => {
-        toggleModal('book-details-modal');
-        prepareIssue(book.id);
-    };
+    if (issueBtn) {
+        issueBtn.style.display = isStaffUser() ? 'block' : 'none';
+        issueBtn.onclick = () => {
+            toggleModal('book-details-modal');
+            prepareIssue(book.id);
+        };
+    }
     
     toggleModal('book-details-modal');
 }
@@ -1321,6 +1367,10 @@ function toggleMemberPw(memberId) {
 }
 
 function prepareMemberIssue(memberId, memberName) {
+    if (!isStaffUser()) {
+        showToast('Only library staff can issue books.', 'info');
+        return;
+    }
     switchView('issue');
     document.getElementById('issue-member-id').value = memberId;
     document.getElementById('issue-book-id').focus();
