@@ -92,9 +92,20 @@ function clearAuthForms() {
 
 function goToLogin() {
     clearAuthForms();
-    document.getElementById('landing-screen').style.display = 'none';
-    document.getElementById('landing-screen').classList.remove('active');
-    document.getElementById('login-screen').classList.add('active');
+    const landing = document.getElementById('landing-screen');
+    if (landing) {
+        landing.style.display = 'none';
+        landing.classList.remove('active');
+    }
+    const login = document.getElementById('login-screen');
+    if (login) {
+        login.classList.add('active');
+    }
+    try {
+        if (window.location.hash !== '#login') {
+            history.replaceState(null, null, '#login');
+        }
+    } catch (e) {}
 }
 
 // --- TOAST NOTIFICATIONS ---
@@ -122,6 +133,30 @@ let allMembersCache = [];
 let allLoansCache = [];
 
 // --- LOCAL STORAGE PERSISTENCE LAYER ---
+function saveActiveSession(user) {
+    try {
+        localStorage.setItem('sa_library_active_session', JSON.stringify(user));
+        document.documentElement.classList.add('has-active-session');
+    } catch (e) {}
+}
+
+function getActiveSession() {
+    try {
+        const raw = localStorage.getItem('sa_library_active_session');
+        return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+        return null;
+    }
+}
+
+function clearActiveSession() {
+    try {
+        localStorage.removeItem('sa_library_active_session');
+        localStorage.removeItem('sa_library_active_view');
+        document.documentElement.classList.remove('has-active-session');
+    } catch (e) {}
+}
+
 function getLocalMembers() {
     try {
         return JSON.parse(localStorage.getItem('sa_library_local_members') || '[]');
@@ -453,6 +488,7 @@ loginForm.addEventListener('submit', async (e) => {
         
         if (data && data.success) {
             currentUser = data;
+            saveActiveSession(data);
             saveLocalMember(data);
             document.getElementById('user-name').textContent = data.name;
             document.getElementById('user-role').textContent = data.role || (data.roleId === 1 ? 'Administrator' : (data.roleId === 2 ? 'Librarian' : 'Student Patron'));
@@ -463,7 +499,7 @@ loginForm.addEventListener('submit', async (e) => {
             appScreen.classList.add('active');
             
             // Apply role-based redirection to matching portal
-            applyRolePermissions(data);
+            applyRolePermissions(data, null, true);
             return;
         }
 
@@ -483,12 +519,13 @@ loginForm.addEventListener('submit', async (e) => {
                 roleId: matched.roleId || (matched.role && matched.role.toLowerCase().includes('staff') ? 2 : 3),
                 role: matched.role || (matched.roleId === 2 ? 'Staff Librarian' : 'Student Patron')
             };
+            saveActiveSession(currentUser);
             document.getElementById('user-name').textContent = currentUser.name;
             document.getElementById('user-role').textContent = currentUser.role;
             document.getElementById('nav-avatar').textContent = currentUser.name.charAt(0).toUpperCase();
             loginScreen.classList.remove('active');
             appScreen.classList.add('active');
-            applyRolePermissions(currentUser);
+            applyRolePermissions(currentUser, null, true);
             return;
         }
 
@@ -657,6 +694,10 @@ signupForm.addEventListener('submit', async (e) => {
 
 document.getElementById('logout-btn').addEventListener('click', () => {
     currentUser = null;
+    clearActiveSession();
+    try {
+        history.replaceState(null, null, ' ');
+    } catch (e) {}
     appScreen.classList.remove('active');
     loginScreen.classList.add('active');
     clearAuthForms();
@@ -678,25 +719,7 @@ navItems.forEach(item => {
             return;
         }
 
-        navItems.forEach(n => n.classList.remove('active'));
-        item.classList.add('active');
-        
-        const rawTitle = item.textContent.trim();
-        pageTitle.textContent = rawTitle.replace(/[^\w\s&]/gi, '').trim();
-        
-        views.forEach(v => v.classList.remove('active'));
-        const targetElem = document.getElementById(`view-${targetView}`);
-        if (targetElem) targetElem.classList.add('active');
-        
-        if (targetView === 'student-portal') loadStudentPortalData();
-        if (targetView === 'dashboard') {
-            loadDashboardStats();
-            loadLoansAndActivity();
-            initChart();
-        }
-        if (targetView === 'catalog') loadCatalog();
-        if (targetView === 'issue') loadLoansAndActivity();
-        if (targetView === 'members') loadMembers();
+        switchView(targetView);
     });
 });
 
@@ -728,21 +751,55 @@ function switchView(target) {
         target = 'student-portal';
     }
 
-    const navBtn = document.querySelector(`.nav-item[data-target="${target}"]`);
-    if (navBtn && navBtn.style.display !== 'none') {
-        navBtn.click();
-    } else {
-        views.forEach(v => v.classList.remove('active'));
-        const targetElem = document.getElementById(`view-${target}`);
-        if (targetElem) targetElem.classList.add('active');
-        if (target === 'student-portal') loadStudentPortalData();
-        else if (target === 'dashboard') loadDashboardStats();
-        else if (target === 'catalog') loadCatalog();
+    // Persist current view and update hash
+    try {
+        localStorage.setItem('sa_library_active_view', target);
+        if (window.location.hash !== '#' + target) {
+            history.replaceState(null, null, '#' + target);
+        }
+    } catch (e) {}
+
+    // Update active nav button and page title
+    const titles = {
+        'student-portal': 'My Books',
+        'dashboard': 'Dashboard',
+        'catalog': 'Book Catalog',
+        'issue': 'Issue & Return',
+        'members': 'Members'
+    };
+
+    navItems.forEach(n => {
+        if (n.getAttribute('data-target') === target) {
+            n.classList.add('active');
+            const rawTitle = n.textContent.trim();
+            if (pageTitle) pageTitle.textContent = rawTitle.replace(/[^\w\s&]/gi, '').trim();
+        } else {
+            n.classList.remove('active');
+        }
+    });
+
+    if (pageTitle && titles[target] && !pageTitle.textContent) {
+        pageTitle.textContent = titles[target];
     }
+
+    views.forEach(v => v.classList.remove('active'));
+    const targetElem = document.getElementById(`view-${target}`);
+    if (targetElem) targetElem.classList.add('active');
+
+    // Trigger target view data loader
+    if (target === 'student-portal') loadStudentPortalData();
+    else if (target === 'dashboard') {
+        loadDashboardStats();
+        loadLoansAndActivity();
+        initChart();
+    }
+    else if (target === 'catalog') loadCatalog();
+    else if (target === 'issue') loadLoansAndActivity();
+    else if (target === 'members') loadMembers();
 }
 
 // --- ROLE-BASED ACCESS CONTROL & REDIRECTION ---
-function applyRolePermissions(user) {
+function applyRolePermissions(user, targetView = null, showWelcomeToast = false) {
     const isAdminOrLibrarian = user.roleId === 1 || user.roleId === 2 || 
                                (user.role && (user.role.toLowerCase().includes('admin') || user.role.toLowerCase().includes('librarian')));
     
@@ -757,24 +814,89 @@ function applyRolePermissions(user) {
         studentNavs.forEach(el => el.style.display = 'none');
         adminBtns.forEach(el => el.style.display = '');
         
-        // Redirect to Admin Dashboard
-        switchView('dashboard');
-        loadDashboardStats();
-        loadLoansAndActivity();
-        initChart();
-        showToast(`Welcome back, ${user.name}! (Staff Administrator)`, 'success');
+        const destination = targetView || 'dashboard';
+        switchView(destination);
+        if (showWelcomeToast) {
+            showToast(`Welcome back, ${user.name}! (Staff Administrator)`, 'success');
+        }
     } else {
         if (navSectionTitle) navSectionTitle.textContent = 'PATRON MENU';
         adminNavs.forEach(el => el.style.display = 'none');
         studentNavs.forEach(el => el.style.display = '');
         adminBtns.forEach(el => el.style.display = 'none');
         
-        // Redirect to Student Portal
-        switchView('student-portal');
-        loadStudentPortalData();
-        showToast(`Welcome, ${user.name}! (Student Library Portal)`, 'success');
+        const destination = (targetView === 'catalog') ? 'catalog' : 'student-portal';
+        switchView(destination);
+        if (showWelcomeToast) {
+            showToast(`Welcome, ${user.name}! (Student Library Portal)`, 'success');
+        }
     }
 }
+
+// --- RESTORE ACTIVE SESSION ON PAGE REFRESH ---
+function restoreAppSession() {
+    const savedUser = getActiveSession();
+    if (!savedUser) {
+        document.documentElement.classList.remove('has-active-session');
+        const hash = (window.location.hash || '').replace('#', '').trim();
+        if (hash === 'login') {
+            goToLogin();
+        }
+        return false;
+    }
+
+    currentUser = savedUser;
+    document.documentElement.classList.add('has-active-session');
+
+    // Switch screens
+    const landingScreen = document.getElementById('landing-screen');
+    if (landingScreen) {
+        landingScreen.style.display = 'none';
+        landingScreen.classList.remove('active');
+    }
+    const loginScreen = document.getElementById('login-screen');
+    if (loginScreen) {
+        loginScreen.classList.remove('active');
+    }
+    const appScreen = document.getElementById('app-screen');
+    if (appScreen) {
+        appScreen.classList.add('active');
+    }
+
+    // Populate user profile info in sidebar/header
+    const nameEl = document.getElementById('user-name');
+    if (nameEl) nameEl.textContent = currentUser.name || 'User';
+    const roleEl = document.getElementById('user-role');
+    if (roleEl) roleEl.textContent = currentUser.role || (isStaffUser() ? 'Staff Administrator' : 'Student Patron');
+    const avatarEl = document.getElementById('nav-avatar');
+    if (avatarEl) avatarEl.textContent = (currentUser.name || 'U').charAt(0).toUpperCase();
+
+    // Determine target view from URL hash or localStorage
+    let targetView = (window.location.hash || '').replace('#', '').trim();
+    if (!targetView || targetView === 'login') {
+        targetView = localStorage.getItem('sa_library_active_view');
+    }
+    if (!targetView) {
+        targetView = isStaffUser() ? 'dashboard' : 'student-portal';
+    }
+
+    // Validate permission for view
+    if (!isStaffUser() && (targetView === 'issue' || targetView === 'dashboard' || targetView === 'members')) {
+        targetView = 'student-portal';
+    }
+
+    applyRolePermissions(currentUser, targetView, false);
+    return true;
+}
+
+window.addEventListener('hashchange', () => {
+    if (currentUser) {
+        let hashTarget = (window.location.hash || '').replace('#', '').trim();
+        if (hashTarget && hashTarget !== 'login') {
+            switchView(hashTarget);
+        }
+    }
+});
 
 // --- STUDENT PORTAL LOGIC ---
 async function loadStudentPortalData() {
@@ -1727,3 +1849,7 @@ window.addEventListener('storage', (e) => {
         }
     }
 });
+
+// --- INITIALIZE & RESTORE SESSION ON REFRESH ---
+restoreAppSession();
+window.addEventListener('DOMContentLoaded', restoreAppSession);

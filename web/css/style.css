@@ -24,6 +24,15 @@ h1, h2, h3 { font-family: 'Playfair Display', serif; }
 .screen { display: none; height: 100vh; width: 100vw; }
 .screen.active { display: flex; }
 
+/* When active session is present: prevent any flash and maintain current view */
+html.has-active-session #landing-screen,
+html.has-active-session #login-screen {
+    display: none !important;
+}
+html.has-active-session #app-screen {
+    display: flex !important;
+}
+
 /* Presentation Landing Page */
 .public-nav { position: fixed; top: 0; width: 100%; padding: 20px 50px; display: flex; justify-content: space-between; align-items: center; z-index: 1000; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(10px); color: white; border-bottom: 1px solid rgba(255,255,255,0.1); }
 .public-nav-links { display: flex; gap: 30px; align-items: center; }

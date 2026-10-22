@@ -2,9 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="0; url=web/">
     <title>SA Library | Redirecting...</title>
-    <script>window.location.replace("web/");</script>
+    <script>
+        window.location.replace("web/" + (window.location.hash || ''));
+    </script>
 </head>
 <body style="font-family: sans-serif; text-align: center; padding: 50px;">
     <h2>Entering SA Library...</h2>
