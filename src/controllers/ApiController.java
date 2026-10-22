@@ -159,7 +159,7 @@ public class ApiController implements HttpHandler {
         // 6. Staff security PIN validation (Passcode: 4321)
         if (roleId == 1 || roleId == 2) {
             if (adminPin == null || !"4321".equals(adminPin.trim())) {
-                sendJsonResponse(exchange, 403, "{\"success\": false, \"error\": \"Invalid Admin PIN. Only authorized personnel with passcode 4321 can register as staff.\"}");
+                sendJsonResponse(exchange, 403, "{\"success\": false, \"error\": \"Wrong PIN code! Only authorized personnel can register as staff.\"}");
                 return;
             }
         }

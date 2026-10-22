@@ -462,7 +462,7 @@ signupForm.addEventListener('submit', async (e) => {
             return;
         }
         if (adminPin !== '4321') {
-            signupError.textContent = 'Invalid Admin PIN! Only authorized personnel with passcode 4321 can register as Staff.';
+            signupError.textContent = 'Wrong PIN code! Please enter the correct Admin Security PIN.';
             signupError.style.display = 'block';
             const pinInput = document.getElementById('reg-admin-pin');
             if (pinInput) {
