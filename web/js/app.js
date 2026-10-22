@@ -671,18 +671,21 @@ async function loadStudentPortalData() {
         if (catStatEl) catStatEl.textContent = stats.totalBooks ? `${stats.totalBooks} Titles` : '500+ Titles';
         
         // Filter personal loans
-        const myUserId = (currentUser.userId || '').toLowerCase();
-        const myEmail = (currentUser.email || '').toLowerCase();
-        const myName = (currentUser.name || '').toLowerCase();
+        const myUserId = (currentUser.userId || currentUser.id || '').toLowerCase().trim();
+        const myEmail = (currentUser.email || '').toLowerCase().trim();
+        const myName = (currentUser.name || '').toLowerCase().trim();
         
         const myLoans = loans.filter(l => {
-            const uId = (l.userId || '').toLowerCase();
-            const uEmail = (l.userEmail || '').toLowerCase();
-            const uName = (l.userName || '').toLowerCase();
+            const uId = (l.userId || l.memberId || '').toLowerCase().trim();
+            const uEmail = (l.userEmail || l.email || '').toLowerCase().trim();
+            const uName = (l.userName || l.memberName || l.name || '').toLowerCase().trim();
             return (myUserId && uId === myUserId) || (myEmail && uEmail === myEmail) || (myName && uName === myName);
         });
         
-        const activeLoans = myLoans.filter(l => l.status === 'ACTIVE');
+        const activeLoans = myLoans.filter(l => {
+            const s = (l.status || '').toUpperCase().trim();
+            return s === 'ACTIVE' || s === 'BORROWED' || s === 'ISSUED';
+        });
         const overdueLoans = activeLoans.filter(l => l.isOverdue);
         
         // Calculate fines
