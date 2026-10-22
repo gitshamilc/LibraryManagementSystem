@@ -109,6 +109,9 @@ public class ApiController implements HttpHandler {
         String email = data.get("email");
         String password = data.get("password");
         String roleStr = data.get("role");
+        String phone = data.get("phone");
+        String className = data.get("className");
+        String rollNumber = data.get("rollNumber");
 
         // 1. Role determination
         int roleId = 3; // Default: Student Patron
@@ -136,7 +139,23 @@ public class ApiController implements HttpHandler {
             return;
         }
 
-        // 5. Password strength rules
+        // 5. Student-specific validations (Mobile number, Class, Roll number required)
+        if (roleId == 3) {
+            if (phone == null || phone.trim().isEmpty()) {
+                sendJsonResponse(exchange, 400, "{\"success\": false, \"error\": \"Mobile number is required for student registration.\"}");
+                return;
+            }
+            if (className == null || className.trim().isEmpty()) {
+                sendJsonResponse(exchange, 400, "{\"success\": false, \"error\": \"Class / Grade is required for student registration.\"}");
+                return;
+            }
+            if (rollNumber == null || rollNumber.trim().isEmpty()) {
+                sendJsonResponse(exchange, 400, "{\"success\": false, \"error\": \"Roll number is required for student registration.\"}");
+                return;
+            }
+        }
+
+        // 6. Password strength rules
         if (password == null || password.length() < 6) {
             sendJsonResponse(exchange, 400, "{\"success\": false, \"error\": \"Password must be at least 6 characters long.\"}");
             return;
@@ -150,7 +169,10 @@ public class ApiController implements HttpHandler {
 
         String prefix = roleId == 1 ? "AD" : (roleId == 2 ? "ST" : "U");
         String newId = prefix + UUID.randomUUID().toString().substring(0, 5).toUpperCase();
-        User newUser = new User(newId, name.trim(), email.trim().toLowerCase(), null, password, roleId);
+        String cleanPhone = (phone != null && !phone.trim().isEmpty()) ? phone.trim() : null;
+        String cleanClass = (className != null && !className.trim().isEmpty()) ? className.trim() : null;
+        String cleanRoll = (rollNumber != null && !rollNumber.trim().isEmpty()) ? rollNumber.trim() : null;
+        User newUser = new User(newId, name.trim(), email.trim().toLowerCase(), cleanPhone, cleanClass, cleanRoll, password, roleId);
 
         try {
             boolean success = userDAO.save(newUser);
@@ -171,6 +193,9 @@ public class ApiController implements HttpHandler {
         String email = data.get("email");
         String password = data.get("password");
         String roleStr = data.get("role");
+        String phone = data.get("phone");
+        String className = data.get("className");
+        String rollNumber = data.get("rollNumber");
 
         if (name == null || email == null || password == null) {
             sendJsonResponse(exchange, 400, "{\"success\": false, \"error\": \"Name, email, and password are required.\"}");
@@ -181,8 +206,12 @@ public class ApiController implements HttpHandler {
         if ("Admin".equalsIgnoreCase(roleStr)) roleId = 1;
         else if ("Librarian".equalsIgnoreCase(roleStr)) roleId = 2;
 
-        String newId = "U" + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
-        User newUser = new User(newId, name.trim(), email.trim().toLowerCase(), null, password, roleId);
+        String prefix = roleId == 1 ? "AD" : (roleId == 2 ? "ST" : "U");
+        String newId = prefix + UUID.randomUUID().toString().substring(0, 5).toUpperCase();
+        String cleanPhone = (phone != null && !phone.trim().isEmpty()) ? phone.trim() : null;
+        String cleanClass = (className != null && !className.trim().isEmpty()) ? className.trim() : null;
+        String cleanRoll = (rollNumber != null && !rollNumber.trim().isEmpty()) ? rollNumber.trim() : null;
+        User newUser = new User(newId, name.trim(), email.trim().toLowerCase(), cleanPhone, cleanClass, cleanRoll, password, roleId);
 
         try {
             boolean success = userDAO.save(newUser);
@@ -516,7 +545,7 @@ public class ApiController implements HttpHandler {
 
     private void handleGetMembers(HttpExchange exchange) throws IOException {
         StringBuilder sb = new StringBuilder("[");
-        String sql = "SELECT u.id, u.name, u.email, u.phone, u.password_hash, COALESCE(r.role_name, 'STUDENT') as role_name, " +
+        String sql = "SELECT u.id, u.name, u.email, u.phone, u.class_name, u.roll_number, u.password_hash, COALESCE(r.role_name, 'STUDENT') as role_name, " +
                      "COALESCE((SELECT COUNT(*) FROM transactions t WHERE t.user_id = u.id AND t.status = 'ACTIVE'), 0) as active_loans " +
                      "FROM users u " +
                      "LEFT JOIN roles r ON u.role_id = r.id " +
@@ -534,13 +563,21 @@ public class ApiController implements HttpHandler {
                 String id = rs.getString("id");
                 String name = rs.getString("name");
                 String email = rs.getString("email");
+                String phone = rs.getString("phone");
+                String className = rs.getString("class_name");
+                String rollNumber = rs.getString("roll_number");
                 String password = rs.getString("password_hash");
                 String role = rs.getString("role_name");
                 int activeLoans = rs.getInt("active_loans");
 
                 sb.append(String.format(
-                    "{\"id\":\"%s\",\"name\":\"%s\",\"email\":\"%s\",\"password\":\"%s\",\"role\":\"%s\",\"activeLoans\":%d}",
-                    escape(id), escape(name), escape(email), escape(password != null ? password : ""), escape(role), activeLoans
+                    "{\"id\":\"%s\",\"name\":\"%s\",\"email\":\"%s\",\"phone\":\"%s\",\"className\":\"%s\",\"rollNumber\":\"%s\",\"password\":\"%s\",\"role\":\"%s\",\"activeLoans\":%d}",
+                    escape(id), escape(name), escape(email),
+                    escape(phone != null ? phone : ""),
+                    escape(className != null ? className : ""),
+                    escape(rollNumber != null ? rollNumber : ""),
+                    escape(password != null ? password : ""),
+                    escape(role), activeLoans
                 ));
             }
 

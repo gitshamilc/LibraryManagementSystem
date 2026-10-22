@@ -57,9 +57,18 @@ function clearAuthForms() {
     const regNameEl = document.getElementById('reg-name');
     const regEmailEl = document.getElementById('reg-email');
     const regPassEl = document.getElementById('reg-password');
+    const regPhoneEl = document.getElementById('reg-phone');
+    const regClassEl = document.getElementById('reg-class');
+    const regRollEl = document.getElementById('reg-roll');
     if (regNameEl) regNameEl.value = '';
     if (regEmailEl) regEmailEl.value = '';
     if (regPassEl) regPassEl.value = '';
+    if (regPhoneEl) regPhoneEl.value = '';
+    if (regClassEl) regClassEl.value = '';
+    if (regRollEl) regRollEl.value = '';
+
+    const studentAcademicFields = document.getElementById('student-academic-fields');
+    if (studentAcademicFields) studentAcademicFields.style.display = 'block';
 
     // Reset role pills to default Student Patron
     const studentPill = document.getElementById('pill-role-student');
@@ -188,7 +197,13 @@ document.querySelectorAll('.role-pill-option').forEach(pill => {
         document.querySelectorAll('.role-pill-option').forEach(p => p.classList.remove('active'));
         pill.classList.add('active');
         const radio = pill.querySelector('input[type="radio"]');
-        if (radio) radio.checked = true;
+        if (radio) {
+            radio.checked = true;
+            const studentFields = document.getElementById('student-academic-fields');
+            if (studentFields) {
+                studentFields.style.display = radio.value === 'Student' ? 'block' : 'none';
+            }
+        }
     });
 });
 
@@ -360,18 +375,25 @@ signupForm.addEventListener('submit', async (e) => {
     const name = document.getElementById('reg-name').value.trim();
     const email = document.getElementById('reg-email').value.trim();
     const password = document.getElementById('reg-password').value;
+    const phone = document.getElementById('reg-phone') ? document.getElementById('reg-phone').value.trim() : '';
+    const className = document.getElementById('reg-class') ? document.getElementById('reg-class').value.trim() : '';
+    const rollNumber = document.getElementById('reg-roll') ? document.getElementById('reg-roll').value.trim() : '';
     const btn = document.getElementById('signup-submit-btn');
     
     signupError.style.display = 'none';
 
-    // 1. Full name validation
+    // 1. Role determination
+    const selectedRoleRadio = document.querySelector('input[name="reg-account-role"]:checked');
+    const role = selectedRoleRadio ? selectedRoleRadio.value : 'Student';
+
+    // 2. Full name validation
     if (name.length < 2) {
         signupError.textContent = 'Please enter your full name (at least 2 characters).';
         signupError.style.display = 'block';
         return;
     }
 
-    // 2. Email format validation
+    // 3. Email format validation
     if (!emailRegex.test(email)) {
         signupError.textContent = 'Please enter a valid email address (e.g. name@example.com).';
         signupError.style.display = 'block';
@@ -379,7 +401,32 @@ signupForm.addEventListener('submit', async (e) => {
         return;
     }
 
-    // 3. Password strength validation
+    // 4. Student-specific validations (Mobile Number, Class, Roll Number)
+    if (role === 'Student') {
+        if (!phone) {
+            signupError.textContent = 'Please enter your mobile number.';
+            signupError.style.display = 'block';
+            const phoneInput = document.getElementById('reg-phone');
+            if (phoneInput) phoneInput.focus();
+            return;
+        }
+        if (!className) {
+            signupError.textContent = 'Please enter your class / grade.';
+            signupError.style.display = 'block';
+            const classInput = document.getElementById('reg-class');
+            if (classInput) classInput.focus();
+            return;
+        }
+        if (!rollNumber) {
+            signupError.textContent = 'Please enter your roll number.';
+            signupError.style.display = 'block';
+            const rollInput = document.getElementById('reg-roll');
+            if (rollInput) rollInput.focus();
+            return;
+        }
+    }
+
+    // 5. Password strength validation
     if (password.length < 6) {
         signupError.textContent = 'Password is not strong enough. Minimum 6 characters required.';
         signupError.style.display = 'block';
@@ -399,13 +446,10 @@ signupForm.addEventListener('submit', async (e) => {
     btn.textContent = 'Creating account...';
     
     try {
-        const selectedRoleRadio = document.querySelector('input[name="reg-account-role"]:checked');
-        const role = selectedRoleRadio ? selectedRoleRadio.value : 'Student';
-
         const response = await fetch(`${API_BASE}/signup`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, email, password, role })
+            body: JSON.stringify({ name, email, password, role, phone, className, rollNumber })
         });
         
         const data = await response.json();
@@ -1085,12 +1129,25 @@ document.getElementById('add-book-form').addEventListener('submit', async (e) =>
 });
 
 // --- 6. REGISTER MEMBER (FORM SUBMISSION) ---
+const newMemberRoleSelect = document.getElementById('new-member-role');
+if (newMemberRoleSelect) {
+    newMemberRoleSelect.addEventListener('change', () => {
+        const studentFields = document.getElementById('new-member-student-fields');
+        if (studentFields) {
+            studentFields.style.display = newMemberRoleSelect.value === 'Student' ? 'flex' : 'none';
+        }
+    });
+}
+
 document.getElementById('add-member-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const name = document.getElementById('new-member-name').value.trim();
     const email = document.getElementById('new-member-email').value.trim();
     const password = document.getElementById('new-member-password').value;
     const role = document.getElementById('new-member-role').value;
+    const phone = document.getElementById('new-member-phone') ? document.getElementById('new-member-phone').value.trim() : '';
+    const className = document.getElementById('new-member-class') ? document.getElementById('new-member-class').value.trim() : '';
+    const rollNumber = document.getElementById('new-member-roll') ? document.getElementById('new-member-roll').value.trim() : '';
     const btn = document.getElementById('save-member-btn');
     
     btn.disabled = true;
@@ -1100,7 +1157,7 @@ document.getElementById('add-member-form').addEventListener('submit', async (e) 
         const res = await fetch(`${API_BASE}/members`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, email, password, role })
+            body: JSON.stringify({ name, email, password, role, phone, className, rollNumber })
         });
         const data = await res.json();
         
@@ -1108,6 +1165,8 @@ document.getElementById('add-member-form').addEventListener('submit', async (e) 
             showToast(data.message || `Member created with ID: ${data.userId}`, 'success');
             toggleModal('add-member-modal');
             document.getElementById('add-member-form').reset();
+            const studentFields = document.getElementById('new-member-student-fields');
+            if (studentFields) studentFields.style.display = 'flex';
             loadDashboardStats();
             loadMembers();
         } else {
@@ -1124,14 +1183,14 @@ document.getElementById('add-member-form').addEventListener('submit', async (e) 
 // --- 7. MEMBER DIRECTORY ---
 async function loadMembers() {
     const tbody = document.getElementById('member-table-body');
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 30px;"><div class="loader">Loading member directory...</div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 30px;"><div class="loader">Loading member directory...</div></td></tr>';
     
     try {
         const res = await fetch(`${API_BASE}/members`);
         allMembersCache = await res.json();
         renderMembers(allMembersCache);
     } catch (err) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #dc2626; padding: 25px;">Failed to load member directory.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; color: #dc2626; padding: 25px;">Failed to load member directory.</td></tr>';
         console.error('Error loading members:', err);
     }
 }
@@ -1141,7 +1200,7 @@ function renderMembers(members) {
     tbody.innerHTML = '';
     
     if (!members || members.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 25px;">No members found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 25px;">No members found.</td></tr>';
         return;
     }
     
@@ -1153,6 +1212,16 @@ function renderMembers(members) {
         const activeLoansBadge = m.activeLoans > 0 
             ? `<span class="badge blue">${m.activeLoans} Active Loan(s)</span>` 
             : `<span class="badge gray">0 Loans</span>`;
+
+        const classRollDisplay = (m.className && m.rollNumber)
+            ? `<span class="badge blue" style="font-size:0.82rem; font-weight:600;">${m.className} • #${m.rollNumber}</span>`
+            : (m.className 
+                ? `<span class="badge blue" style="font-size:0.82rem;">${m.className}</span>`
+                : (m.rollNumber ? `<span class="badge blue" style="font-size:0.82rem;">#${m.rollNumber}</span>` : `<span style="color:var(--text-muted); font-size:0.85rem;">—</span>`));
+
+        const phoneDisplay = m.phone 
+            ? `<span style="font-family:monospace; font-size:0.86rem; color:var(--text-main); font-weight:500;">${m.phone}</span>` 
+            : `<span style="color:var(--text-muted); font-size:0.85rem;">—</span>`;
 
         const safePw = (m.password || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         const pwDisplay = m.password ? `
@@ -1166,6 +1235,8 @@ function renderMembers(members) {
             <tr>
                 <td><code>${m.id}</code></td>
                 <td><strong>${m.name}</strong></td>
+                <td>${classRollDisplay}</td>
+                <td>${phoneDisplay}</td>
                 <td>${m.email}</td>
                 <td>${pwDisplay}</td>
                 <td><span class="badge ${roleBadge}">${m.role}</span></td>
@@ -1215,6 +1286,9 @@ document.getElementById('member-search-input').addEventListener('input', (e) => 
         m.name.toLowerCase().includes(term) || 
         m.email.toLowerCase().includes(term) || 
         m.id.toLowerCase().includes(term) ||
+        (m.phone && m.phone.toLowerCase().includes(term)) ||
+        (m.className && m.className.toLowerCase().includes(term)) ||
+        (m.rollNumber && m.rollNumber.toLowerCase().includes(term)) ||
         m.role.toLowerCase().includes(term)
     );
     renderMembers(filtered);

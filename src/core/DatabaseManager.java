@@ -64,7 +64,7 @@ public class DatabaseManager {
             
             System.out.println("Starting Database Schema Initialization...");
             executeSql(stmt, "CREATE TABLE IF NOT EXISTS roles (id " + autoInc + ", role_name VARCHAR(50) UNIQUE NOT NULL)");
-            executeSql(stmt, "CREATE TABLE IF NOT EXISTS users (id VARCHAR(50) PRIMARY KEY, name VARCHAR(100) NOT NULL, email VARCHAR(100) UNIQUE NOT NULL, phone VARCHAR(20), password_hash VARCHAR(255) NOT NULL, role_id INTEGER, created_at " + dateTime + " DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(role_id) REFERENCES roles(id))");
+            executeSql(stmt, "CREATE TABLE IF NOT EXISTS users (id VARCHAR(50) PRIMARY KEY, name VARCHAR(100) NOT NULL, email VARCHAR(100) UNIQUE NOT NULL, phone VARCHAR(20), class_name VARCHAR(50), roll_number VARCHAR(50), password_hash VARCHAR(255) NOT NULL, role_id INTEGER, created_at " + dateTime + " DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(role_id) REFERENCES roles(id))");
             executeSql(stmt, "CREATE TABLE IF NOT EXISTS authors (id " + autoInc + ", name VARCHAR(100) UNIQUE NOT NULL)");
             executeSql(stmt, "CREATE TABLE IF NOT EXISTS categories (id " + autoInc + ", name VARCHAR(100) UNIQUE NOT NULL)");
             executeSql(stmt, "CREATE TABLE IF NOT EXISTS publishers (id " + autoInc + ", name VARCHAR(100) UNIQUE NOT NULL)");
@@ -78,6 +78,10 @@ public class DatabaseManager {
             executeSql(stmt, "CREATE TABLE IF NOT EXISTS notifications (id " + autoInc + ", user_id VARCHAR(50) NOT NULL, message TEXT NOT NULL, is_read " + boolType + " DEFAULT " + (isPostgres ? "false" : "0") + ", created_at " + dateTime + " DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(user_id) REFERENCES users(id))");
             executeSql(stmt, "CREATE TABLE IF NOT EXISTS audit_logs (id " + autoInc + ", user_id VARCHAR(50), action VARCHAR(100) NOT NULL, details TEXT, created_at " + dateTime + " DEFAULT CURRENT_TIMESTAMP)");
             executeSql(stmt, "CREATE TABLE IF NOT EXISTS library_settings (setting_key VARCHAR(100) PRIMARY KEY, setting_value TEXT NOT NULL)");
+
+            // Safe automatic column migrations for existing databases
+            safeInsert(stmt, "ALTER TABLE users ADD COLUMN class_name VARCHAR(50)");
+            safeInsert(stmt, "ALTER TABLE users ADD COLUMN roll_number VARCHAR(50)");
 
             System.out.println("Database schema initialized successfully.");
             

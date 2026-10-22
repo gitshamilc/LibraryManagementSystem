@@ -203,6 +203,23 @@
                                 <input type="email" id="reg-email" required placeholder="john@example.com" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
                                 <small id="reg-email-hint" style="display:none; color:#dc2626; font-size:0.8rem; margin-top:4px;">Please enter a valid email (e.g. name@example.com)</small>
                             </div>
+                            <!-- Student-Specific Academic & Contact Details (Shown for Student role) -->
+                            <div id="student-academic-fields">
+                                <div class="input-group">
+                                    <label>Mobile Number *</label>
+                                    <input type="tel" id="reg-phone" placeholder="e.g. +91 9876543210" autocomplete="tel">
+                                </div>
+                                <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+                                    <div class="input-group" style="flex: 1; margin-bottom: 0;">
+                                        <label>Class / Grade *</label>
+                                        <input type="text" id="reg-class" placeholder="e.g. 10th-A / CS Year 2" autocomplete="off">
+                                    </div>
+                                    <div class="input-group" style="flex: 1; margin-bottom: 0;">
+                                        <label>Roll Number *</label>
+                                        <input type="text" id="reg-roll" placeholder="e.g. 24 or 101" autocomplete="off">
+                                    </div>
+                                </div>
+                            </div>
                             <div class="input-group">
                                 <label>Password *</label>
                                 <div class="password-field-wrapper">
@@ -530,6 +547,8 @@
                                 <tr>
                                     <th>ID</th>
                                     <th>Name</th>
+                                    <th>Class & Roll No</th>
+                                    <th>Mobile No</th>
                                     <th>Email (Login ID)</th>
                                     <th>Password</th>
                                     <th>Role</th>
@@ -539,7 +558,7 @@
                                 </tr>
                             </thead>
                             <tbody id="member-table-body">
-                                <tr><td colspan="8" style="text-align: center; padding: 30px;">Loading members...</td></tr>
+                                <tr><td colspan="10" style="text-align: center; padding: 30px;">Loading members...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -614,6 +633,20 @@
                             <option value="Librarian">Librarian (Staff)</option>
                             <option value="Admin">Administrator</option>
                         </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Mobile Number</label>
+                        <input type="tel" id="new-member-phone" placeholder="e.g. +91 9876543210">
+                    </div>
+                    <div id="new-member-student-fields" style="display: flex; gap: 12px; margin-bottom: 16px;">
+                        <div class="input-group" style="flex: 1; margin-bottom: 0;">
+                            <label>Class / Grade</label>
+                            <input type="text" id="new-member-class" placeholder="e.g. 10th-A">
+                        </div>
+                        <div class="input-group" style="flex: 1; margin-bottom: 0;">
+                            <label>Roll Number</label>
+                            <input type="text" id="new-member-roll" placeholder="e.g. 24">
+                        </div>
                     </div>
                     <button type="submit" class="btn-primary" id="save-member-btn">Register Member</button>
                 </form>

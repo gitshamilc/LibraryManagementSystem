@@ -25,6 +25,8 @@ public class UserDAO implements GenericDAO<User, String> {
                     rs.getString("name"),
                     rs.getString("email"),
                     rs.getString("phone"),
+                    rs.getString("class_name"),
+                    rs.getString("roll_number"),
                     rs.getString("password_hash"),
                     rs.getInt("role_id")
                 );
@@ -50,6 +52,8 @@ public class UserDAO implements GenericDAO<User, String> {
                     rs.getString("name"),
                     rs.getString("email"),
                     rs.getString("phone"),
+                    rs.getString("class_name"),
+                    rs.getString("roll_number"),
                     rs.getString("password_hash"),
                     rs.getInt("role_id")
                 );
@@ -95,6 +99,8 @@ public class UserDAO implements GenericDAO<User, String> {
                     rs.getString("name"),
                     rs.getString("email"),
                     rs.getString("phone"),
+                    rs.getString("class_name"),
+                    rs.getString("roll_number"),
                     rs.getString("password_hash"),
                     rs.getInt("role_id")
                 ));
@@ -107,7 +113,7 @@ public class UserDAO implements GenericDAO<User, String> {
 
     @Override
     public boolean save(User entity) {
-        String query = "INSERT INTO users (id, name, email, phone, password_hash, role_id) VALUES (?, ?, ?, ?, ?, ?)";
+        String query = "INSERT INTO users (id, name, email, phone, class_name, roll_number, password_hash, role_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement ps = conn.prepareStatement(query)) {
             ps.setString(1, entity.getId());
@@ -118,8 +124,18 @@ public class UserDAO implements GenericDAO<User, String> {
             } else {
                 ps.setString(4, entity.getPhone());
             }
-            ps.setString(5, entity.getPasswordHash());
-            ps.setInt(6, entity.getRoleId());
+            if (entity.getClassName() == null) {
+                ps.setNull(5, java.sql.Types.VARCHAR);
+            } else {
+                ps.setString(5, entity.getClassName());
+            }
+            if (entity.getRollNumber() == null) {
+                ps.setNull(6, java.sql.Types.VARCHAR);
+            } else {
+                ps.setString(6, entity.getRollNumber());
+            }
+            ps.setString(7, entity.getPasswordHash());
+            ps.setInt(8, entity.getRoleId());
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -129,15 +145,17 @@ public class UserDAO implements GenericDAO<User, String> {
 
     @Override
     public boolean update(User entity) {
-        String query = "UPDATE users SET name = ?, email = ?, phone = ?, password_hash = ?, role_id = ? WHERE id = ?";
+        String query = "UPDATE users SET name = ?, email = ?, phone = ?, class_name = ?, roll_number = ?, password_hash = ?, role_id = ? WHERE id = ?";
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement ps = conn.prepareStatement(query)) {
             ps.setString(1, entity.getName());
             ps.setString(2, entity.getEmail().toLowerCase().trim());
             ps.setString(3, entity.getPhone());
-            ps.setString(4, entity.getPasswordHash());
-            ps.setInt(5, entity.getRoleId());
-            ps.setString(6, entity.getId());
+            ps.setString(4, entity.getClassName());
+            ps.setString(5, entity.getRollNumber());
+            ps.setString(6, entity.getPasswordHash());
+            ps.setInt(7, entity.getRoleId());
+            ps.setString(8, entity.getId());
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
